@@ -11,6 +11,7 @@ from .db import get_db
 from .models import Product, Household, Category, Plan, Review, Media, now
 from .schemas import ProductInput, HouseholdInput
 from .security import roles, household, audit, limit, current_user
+from .compliance import require_signed
 
 router = APIRouter(tags=["catalog"])
 Image.MAX_IMAGE_PIXELS = 20_000_000
@@ -193,6 +194,7 @@ def sync_media(db, h):
 @router.post("/seller/products", status_code=201)
 def create_product(data: ProductInput, user=Depends(roles("seller")), db=Depends(get_db)):
     h = household(db, user)
+    require_signed(db, user)
     validate_product(db, h, data)
     ensure_product_capacity(db, h)
     p = Product(household_id=h.id, **data.model_dump())
@@ -219,6 +221,9 @@ def update_product(product_id: str, data: ProductInput, user=Depends(roles("sell
     p = db.get(Product, product_id)
     if not p or p.household_id != h.id or p.status == "archived":
         raise HTTPException(404, "المنتج غير موجود")
+    # Products already on sale stay editable; new publishing waits for the current contract.
+    if data.status == "published" and p.status != "published":
+        require_signed(db, user)
     validate_product(db, h, data)
     for key, value in data.model_dump().items():
         setattr(p, key, value)

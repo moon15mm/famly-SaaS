@@ -35,7 +35,10 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,6 +57,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -85,7 +89,6 @@ private val Plum = Color(0xFF673746)
 private val Paper = Color(0xFFFAF8F5)
 private val Leaf = Color(0xFF2E6B4F)
 private val Tajawal = FontFamily(Font(R.font.tajawal_regular, FontWeight.Normal), Font(R.font.tajawal_bold, FontWeight.Bold))
-private val DOCUMENT_KINDS = listOf("رخصة القيادة", "الهوية الوطنية", "استمارة المركبة")
 
 object DriverPermissions {
     fun location(context: Context): Boolean =
@@ -305,8 +308,8 @@ private fun HomeScreen(model: DriverModel) {
         when {
             summary == null -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             !summary.verified -> Section("حسابك بانتظار الاعتماد") {
-                Text("تراجع الإدارة مستندات السائق قبل تفعيل استقبال المشاوير.")
-                Button(onClick = { model.open("more") }) { Text("رفع المستندات") }
+                Text("تعتمد الإدارة الحساب بعد توقيع العقد واعتماد المستندات المطلوبة.")
+                Button(onClick = { model.open("more") }) { Text("العقد والمستندات") }
             }
             else -> Section("الدوام") {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -319,11 +322,19 @@ private fun HomeScreen(model: DriverModel) {
                         enabled = !model.busy,
                         onCheckedChange = { on ->
                             if (!on) model.setAvailable(false)
+                            else if (!summary.complete) model.message = "يلزم إكمال العقد والمستندات المطلوبة أولًا من تبويب «المزيد»"
                             else if (DriverPermissions.missing(context)) permissions.launch(DriverPermissions.shift())
                             else model.setAvailable(true)
                         },
                     )
                 }
+            }
+        }
+        if (summary != null && !summary.complete) {
+            Section("متطلبات العمل") {
+                Text("قبل بدء الدوام يلزم إكمال:")
+                summary.missing.forEach { Text("• $it") }
+                Button(onClick = { model.open("more") }) { Text("إكمال العقد والمستندات") }
             }
         }
         if (summary?.activeTripId != null) {
@@ -502,11 +513,80 @@ private fun HistoryScreen(model: DriverModel) {
 }
 
 @Composable
+private fun ContractSection(model: DriverModel, contract: ContractInfo) {
+    if (contract.accepted) {
+        Section("العقد") {
+            Text("وُقّع «" + contract.title + "» — الإصدار " + contract.version)
+            if (contract.acceptedAt.isNotBlank()) Note("بتاريخ " + Driving.localTime(contract.acceptedAt))
+        }
+        return
+    }
+    var name by rememberSaveable(contract.id) { mutableStateOf("") }
+    var agree by rememberSaveable(contract.id) { mutableStateOf(false) }
+    Section(contract.title + " — الإصدار " + contract.version) {
+        Text(contract.body, style = MaterialTheme.typography.bodyMedium)
+        HorizontalDivider()
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it.take(100) },
+            label = { Text("الاسم الكامل كما في الهوية") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = agree, onCheckedChange = { agree = it })
+            Text("قرأت العقد وأوافق على الالتزام بجميع بنوده")
+        }
+        Button(
+            onClick = { model.sign(name) },
+            enabled = !model.busy && agree && name.trim().length >= 3,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("توقيع العقد إلكترونيًا") }
+        Note("يُحفظ مع التوقيع الاسم والوقت وعنوان الاتصال لإثبات الموافقة.")
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun MoreScreen(model: DriverModel, openWeb: (String) -> Unit) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { model.loadMore() }
-    var kind by rememberSaveable { mutableStateOf(DOCUMENT_KINDS.first()) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> if (uri != null) model.upload(uri, kind) }
+    var target by remember { mutableStateOf<Requirement?>(null) }
+    var expiry by remember { mutableStateOf<String?>(null) }
+    var choosingDate by remember { mutableStateOf(false) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val requirement = target
+        if (uri != null && requirement != null) model.upload(uri, requirement, expiry)
+        target = null
+        expiry = null
+    }
+    if (choosingDate) {
+        val dates = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis() + 365L * 86_400_000L)
+        DatePickerDialog(
+            onDismissRequest = {
+                choosingDate = false
+                target = null
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = dates.selectedDateMillis
+                    choosingDate = false
+                    if (millis == null) {
+                        target = null
+                    } else {
+                        expiry = Driving.isoDate(millis)
+                        picker.launch("image/*")
+                    }
+                }) { Text("التالي: اختيار الصورة") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    choosingDate = false
+                    target = null
+                }) { Text("إلغاء") }
+            },
+        ) { DatePicker(state = dates, title = { Text("تاريخ انتهاء المستند", Modifier.padding(16.dp)) }) }
+    }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -516,26 +596,32 @@ private fun MoreScreen(model: DriverModel, openWeb: (String) -> Unit) {
             Note("المنصة: " + Uri.parse(model.origin).host.orEmpty())
             OutlinedButton(onClick = model::logout, enabled = !model.busy) { Text("تسجيل الخروج") }
         }
-        Section("مستندات الاعتماد") {
-            if (model.documents.isEmpty()) Note("لم تُرفع مستندات بعد.")
-            model.documents.forEach { document ->
-                val state = when (document.status) {
-                    "accepted" -> "مقبول"
-                    "rejected" -> "مرفوض"
-                    else -> "قيد المراجعة"
+        val compliance = model.compliance
+        if (compliance == null) {
+            Section("العقد والمستندات") { Note("جارٍ التحميل…") }
+        } else {
+            compliance.contract?.let { ContractSection(model, it) }
+            Section("المستندات المطلوبة") {
+                compliance.documents.forEach { requirement ->
+                    Text(requirement.title + if (requirement.required) "" else " (اختياري)", fontWeight = FontWeight.Bold)
+                    Note(
+                        Driving.documentState(requirement.state) +
+                            if (requirement.expiresOn.isNotBlank()) " • ينتهي " + requirement.expiresOn else "",
+                    )
+                    if (requirement.note.isNotBlank()) Note("ملاحظة المراجعة: " + requirement.note)
+                    if (Driving.needsUpload(requirement.state) || requirement.state == "expiring") {
+                        OutlinedButton(
+                            onClick = {
+                                target = requirement
+                                if (requirement.needsExpiry) choosingDate = true else picker.launch("image/*")
+                            },
+                            enabled = !model.busy,
+                        ) { Text(if (requirement.state == "missing") "رفع المستند" else "رفع نسخة جديدة") }
+                    }
+                    HorizontalDivider()
                 }
-                Text(document.kind + " • " + state)
-                if (document.note.isNotBlank()) Note(document.note)
+                Note("صور واضحة حتى 5 ميجابايت، تُعاد معالجتها على الخادم وتبقى خاصة بالإدارة.")
             }
-            HorizontalDivider()
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                DOCUMENT_KINDS.forEach { option ->
-                    if (option == kind) Button(onClick = {}, modifier = Modifier.weight(1f)) { Text(option, style = MaterialTheme.typography.labelSmall) }
-                    else OutlinedButton(onClick = { kind = option }, modifier = Modifier.weight(1f)) { Text(option, style = MaterialTheme.typography.labelSmall) }
-                }
-            }
-            Button(onClick = { picker.launch("image/*") }, enabled = !model.busy) { Text("اختيار صورة ورفعها") }
-            Note("تُعاد معالجة الصورة على الخادم وتبقى خاصة بالإدارة.")
         }
         Section("الإشعارات") {
             if (model.notices.isEmpty()) Note("لا إشعارات.")

@@ -44,6 +44,13 @@ class DrivingTest {
         assertEquals("https://www.google.com/maps/dir/?api=1&destination=24.7,46.6", Driving.webMapsUrl(24.7, 46.6, "x"))
     }
 
+    @Test fun requiredDocumentsShowStateAndUploadNeed() {
+        assertEquals("2027-03-01", Driving.isoDate(1_803_859_200_000L))
+        assertEquals("ينتهي قريبًا", Driving.documentState("expiring"))
+        assertTrue(Driving.needsUpload("missing") && Driving.needsUpload("rejected") && Driving.needsUpload("expired"))
+        assertTrue(!Driving.needsUpload("pending") && !Driving.needsUpload("accepted"))
+    }
+
     @Test fun onlyUnseenOffersAlert() {
         assertEquals(listOf("c"), Driving.newOffers(listOf("a", "b", "c"), setOf("a", "b")))
         assertEquals(emptyList<String>(), Driving.newOffers(listOf("a"), setOf("a")))

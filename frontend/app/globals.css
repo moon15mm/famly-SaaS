@@ -2635,6 +2635,19 @@ dialog::backdrop {
 .form-stack select {
   max-width: 100%;
 }
+.contract-text {
+  white-space: pre-wrap;
+  max-height: 26rem;
+  overflow-y: auto;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  line-height: 1.9;
+}
+.contract-text.print-full {
+  max-height: none;
+}
 @media print {
   header,
   footer,

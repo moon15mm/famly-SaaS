@@ -21,6 +21,8 @@ data class Summary(
     val activeTripStatus: String?,
     val deliveredTrips: Int,
     val declaredFees: Int,
+    val complete: Boolean,
+    val missing: List<String>,
 )
 
 data class Offer(val id: String, val city: String, val scheduledAt: String, val fee: Int, val expiresAt: String, val distanceKm: Double?)
@@ -46,13 +48,28 @@ data class PastTrip(val id: String, val household: String, val status: String, v
 
 data class Notice(val message: String, val read: Boolean, val createdAt: String)
 
-data class DriverDocument(val kind: String, val status: String, val note: String, val createdAt: String)
+data class ContractInfo(val id: String, val version: Int, val title: String, val body: String, val accepted: Boolean, val acceptedAt: String)
+
+data class Requirement(
+    val id: String,
+    val title: String,
+    val description: String,
+    val required: Boolean,
+    val needsExpiry: Boolean,
+    val state: String,
+    val expiresOn: String,
+    val note: String,
+)
+
+data class Compliance(val complete: Boolean, val missing: List<String>, val contract: ContractInfo?, val documents: List<Requirement>)
 
 private fun JSONObject.text(name: String): String = if (isNull(name)) "" else optString(name, "")
 
 private fun JSONObject.decimal(name: String): Double? = if (isNull(name)) null else optDouble(name).takeIf { !it.isNaN() }
 
 private fun JSONArray.objects(): List<JSONObject> = (0 until length()).map { getJSONObject(it) }
+
+private fun JSONArray?.texts(): List<String> = if (this == null) emptyList() else (0 until length()).map { getString(it) }
 
 /** The platform API with the driver's session cookie; the same origin and CSRF rules as the website. */
 class DriverApi(private val origin: String, private val token: () -> String?) {
@@ -157,6 +174,8 @@ class DriverApi(private val origin: String, private val token: () -> String?) {
             activeTripStatus = trip?.text("status"),
             deliveredTrips = json.optInt("delivered_trips"),
             declaredFees = json.optInt("declared_fees"),
+            complete = json.optJSONObject("compliance")?.optBoolean("complete", true) ?: true,
+            missing = json.optJSONObject("compliance")?.optJSONArray("missing").texts(),
         )
     }
 
@@ -221,11 +240,37 @@ class DriverApi(private val origin: String, private val token: () -> String?) {
         post("/notifications/read")
     }
 
-    suspend fun documents(): List<DriverDocument> = JSONArray(get("/verification/documents")).objects().map {
-        DriverDocument(it.text("kind"), it.text("status"), it.text("reviewer_note"), it.text("created_at"))
+    suspend fun compliance(): Compliance = JSONObject(get("/compliance")).let { json ->
+        val contract = json.optJSONObject("contract")
+        Compliance(
+            complete = json.optBoolean("complete"),
+            missing = json.optJSONArray("missing").texts(),
+            contract = contract?.let {
+                ContractInfo(it.text("id"), it.optInt("version"), it.text("title"), it.text("body"), it.optBoolean("accepted"), it.text("accepted_at"))
+            },
+            documents = (json.optJSONArray("documents") ?: JSONArray()).objects().map {
+                Requirement(
+                    id = it.text("id"),
+                    title = it.text("title"),
+                    description = it.text("description"),
+                    required = it.optBoolean("required"),
+                    needsExpiry = it.optBoolean("needs_expiry"),
+                    state = it.text("state"),
+                    expiresOn = it.text("expires_on"),
+                    note = it.text("note"),
+                )
+            },
+        )
     }
 
-    suspend fun upload(kind: String, file: Upload) {
-        withContext(Dispatchers.IO) { send("POST", "/verification/documents?kind=" + URLEncoder.encode(kind, "UTF-8"), upload = file) }
+    suspend fun acceptContract(contractId: String, fullName: String) {
+        post("/compliance/contract", JSONObject().put("contract_id", contractId).put("full_name", fullName).put("agree", true))
+    }
+
+    /** Uploads a required document; [expiresOn] is an ISO date for documents that expire. */
+    suspend fun uploadRequirement(requirementId: String, expiresOn: String?, file: Upload) {
+        val query = "requirement_id=" + URLEncoder.encode(requirementId, "UTF-8") +
+            if (expiresOn != null) "&expires_on=" + URLEncoder.encode(expiresOn, "UTF-8") else ""
+        withContext(Dispatchers.IO) { send("POST", "/verification/documents?$query", upload = file) }
     }
 }

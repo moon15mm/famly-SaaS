@@ -2722,6 +2722,33 @@
               "default": "وثيقة أهلية",
               "title": "Kind"
             }
+          },
+          {
+            "name": "requirement_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Requirement Id"
+            }
+          },
+          {
+            "name": "expires_on",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expires On"
+            }
           }
         ],
         "requestBody": {
@@ -3415,6 +3442,269 @@
         }
       }
     },
+    "/api/compliance": {
+      "get": {
+        "tags": [
+          "contracts and requirements"
+        ],
+        "summary": "Mine",
+        "operationId": "mine_api_compliance_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compliance/contract": {
+      "post": {
+        "tags": [
+          "contracts and requirements"
+        ],
+        "summary": "Accept",
+        "operationId": "accept_api_compliance_contract_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/contracts/acceptances/{acceptance_id}": {
+      "get": {
+        "tags": [
+          "contracts and requirements"
+        ],
+        "summary": "Acceptance Copy",
+        "operationId": "acceptance_copy_api_contracts_acceptances__acceptance_id__get",
+        "parameters": [
+          {
+            "name": "acceptance_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Acceptance Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/contracts": {
+      "get": {
+        "tags": [
+          "contracts and requirements"
+        ],
+        "summary": "Contracts",
+        "operationId": "contracts_api_admin_contracts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "contracts and requirements"
+        ],
+        "summary": "Publish",
+        "operationId": "publish_api_admin_contracts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/requirements": {
+      "get": {
+        "tags": [
+          "contracts and requirements"
+        ],
+        "summary": "Requirements",
+        "operationId": "requirements_api_admin_requirements_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/requirements/{requirement_id}": {
+      "put": {
+        "tags": [
+          "contracts and requirements"
+        ],
+        "summary": "Save Requirement",
+        "operationId": "save_requirement_api_admin_requirements__requirement_id__put",
+        "parameters": [
+          {
+            "name": "requirement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Requirement Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequirementInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/compliance/{user_id}": {
+      "get": {
+        "tags": [
+          "contracts and requirements"
+        ],
+        "summary": "User Compliance",
+        "operationId": "user_compliance_api_admin_compliance__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/{filename}": {
       "get": {
         "summary": "Media",
@@ -3455,6 +3745,32 @@
   },
   "components": {
     "schemas": {
+      "AcceptInput": {
+        "properties": {
+          "contract_id": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Contract Id"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Full Name"
+          },
+          "agree": {
+            "type": "boolean",
+            "title": "Agree"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_id",
+          "full_name",
+          "agree"
+        ],
+        "title": "AcceptInput"
+      },
       "Body_upload_api_seller_media_post": {
         "properties": {
           "file": {
@@ -3631,6 +3947,37 @@
           "idempotency_key"
         ],
         "title": "Checkout"
+      },
+      "ContractInput": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "seller",
+              "driver"
+            ],
+            "title": "Role"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 3,
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 50000,
+            "minLength": 50,
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "title",
+          "body"
+        ],
+        "title": "ContractInput"
       },
       "EmailInput": {
         "properties": {
@@ -4112,6 +4459,58 @@
         ],
         "title": "Register"
       },
+      "RequirementInput": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "seller",
+              "driver"
+            ],
+            "title": "Role"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Description",
+            "default": ""
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": true
+          },
+          "needs_expiry": {
+            "type": "boolean",
+            "title": "Needs Expiry",
+            "default": false
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "position": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Position",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "title"
+        ],
+        "title": "RequirementInput"
+      },
       "ResetInput": {
         "properties": {
           "token": {
@@ -4369,6 +4768,18 @@
             "maxLength": 1000,
             "title": "Note",
             "default": ""
+          },
+          "expires_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires On"
           }
         },
         "type": "object",

@@ -14,6 +14,7 @@ npm.cmd ci --prefix frontend
 .\.venv\Scripts\python.exe scripts/fetch_assets.py
 $env:PYTHONPATH='backend'
 .\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
+.\.venv\Scripts\python.exe -m app.bootstrap
 .\.venv\Scripts\python.exe -m app.seed
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 ```

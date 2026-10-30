@@ -12,6 +12,7 @@ from .models import TelegramLink, TelegramUpdate, Household, Product, Category, 
 from .models_ext import TelegramPendingPhoto
 from .security import roles, household, digest, limit
 from .catalog import save_image, sync_media
+from .compliance import contract_signed
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 
@@ -65,6 +66,9 @@ async def create_draft(db, h, text, image_url, sender):
     from .schemas import ProductInput
     from .catalog import validate_product, ensure_product_capacity
 
+    if not contract_signed(db, db.get(User, h.owner_id)):
+        queue(db, sender, "يلزم قبول عقد الأسرة من لوحة الأسرة قبل إضافة منتجات جديدة.")
+        return None
     limit("ai-draft:" + h.id, 10, 3600)
     fields = await run_in_threadpool(draft_provider().suggest, text, image_url)
     if not db.get(Category, fields["category_id"]):
@@ -177,7 +181,9 @@ async def webhook(request: Request, db=Depends(get_db)):
         elif text.startswith("/publish "):
             parts = text.split()
             p = db.get(Product, parts[1]) if len(parts) == 3 and parts[2] == "تأكيد" else None
-            if not p or p.household_id != h.id or p.status != "draft" or not h.verified or not h.pickup_address or not p.images:
+            if not contract_signed(db, db.get(User, h.owner_id)):
+                queue(db, sender, "يلزم قبول عقد الأسرة من لوحة الأسرة قبل نشر المنتجات.")
+            elif not p or p.household_id != h.id or p.status != "draft" or not h.verified or not h.pickup_address or not p.images:
                 queue(db, sender, "تعذر النشر؛ تحقق من المسودة واعتماد الأسرة وموقع الاستلام. اكتب /publish معرف_المنتج تأكيد")
             else:
                 from .schemas import ProductInput

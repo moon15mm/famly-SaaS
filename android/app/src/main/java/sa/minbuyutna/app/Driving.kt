@@ -81,5 +81,22 @@ object Driving {
 
     fun newOffers(current: List<String>, seen: Set<String>): List<String> = current.filter { it !in seen }
 
+    /** The calendar date picked in a Material date picker, which reports UTC midnight. */
+    fun isoDate(utcMillis: Long): String = Instant.ofEpochMilli(utcMillis).atZone(ZoneOffset.UTC).toLocalDate().toString()
+
+    private val documentStates = mapOf(
+        "missing" to "لم يُرفع",
+        "pending" to "بانتظار المراجعة",
+        "rejected" to "مرفوض",
+        "expired" to "منتهي",
+        "expiring" to "ينتهي قريبًا",
+        "accepted" to "مقبول",
+    )
+
+    fun documentState(value: String): String = documentStates[value] ?: value
+
+    /** Documents still needing an upload: anything not under review and not currently valid. */
+    fun needsUpload(state: String): Boolean = state != "pending" && state != "accepted"
+
     private fun encode(value: String): String = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 }

@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import secrets
 import time
+from datetime import date
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -9,9 +10,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from .config import settings
 from .db import get_db
-from .models_ext import VerificationDocument
+from .models import Notification
+from .models_ext import VerificationDocument, DocumentRequirement
 from .security import current_user, roles, household, audit, limit
 from .catalog import save_image
+from .compliance import today
 
 router = APIRouter(tags=["private verification documents"])
 development_signing_key = secrets.token_urlsafe(48)
@@ -26,7 +29,10 @@ def key():
 
 
 def document_json(d):
-    return {k: getattr(d, k) for k in ["id", "owner_id", "household_id", "kind", "status", "reviewer_note", "created_at"]}
+    return {
+        k: getattr(d, k)
+        for k in ["id", "owner_id", "household_id", "kind", "status", "reviewer_note", "created_at", "requirement_id", "expires_on"]
+    }
 
 
 def allowed(db, document_id, user):
@@ -37,8 +43,25 @@ def allowed(db, document_id, user):
 
 
 @router.post("/verification/documents", status_code=201)
-async def upload(file: UploadFile, kind: str = "وثيقة أهلية", user=Depends(roles("seller", "driver")), db=Depends(get_db)):
+async def upload(
+    file: UploadFile,
+    kind: str = "وثيقة أهلية",
+    requirement_id: str = "",
+    expires_on: date | None = None,
+    user=Depends(roles("seller", "driver")),
+    db=Depends(get_db),
+):
     limit("document:" + user.id, 10, 300)
+    requirement = None
+    if requirement_id:
+        requirement = db.get(DocumentRequirement, requirement_id)
+        if not requirement or not requirement.active or requirement.role != user.role:
+            raise HTTPException(422, "هذا المستند غير مطلوب لهذا الحساب")
+        kind = requirement.title
+        if requirement.needs_expiry and not expires_on:
+            raise HTTPException(422, "أدخل تاريخ انتهاء المستند")
+    if expires_on and expires_on < today():
+        raise HTTPException(422, "المستند منتهي؛ ارفع نسخة سارية")
     if not 2 <= len(kind) <= 80:
         raise HTTPException(422, "نوع مستند غير صالح")
     raw = await file.read(5 * 1024 * 1024 + 1)
@@ -52,7 +75,15 @@ async def upload(file: UploadFile, kind: str = "وثيقة أهلية", user=Dep
     thumbnail = public_path.parent / ("thumb-" + public_path.name)
     thumbnail.unlink(missing_ok=True)
     h = household(db, user) if user.role == "seller" else None
-    d = VerificationDocument(owner_id=user.id, household_id=h.id if h else None, kind=kind, filename=filename, mime_type="image/webp")
+    d = VerificationDocument(
+        owner_id=user.id,
+        household_id=h.id if h else None,
+        kind=kind,
+        filename=filename,
+        mime_type="image/webp",
+        requirement_id=requirement.id if requirement else None,
+        expires_on=expires_on,
+    )
     db.add(d)
     db.flush()
     audit(db, user, "verification.upload", d.id)
@@ -99,12 +130,23 @@ def download(document_id: str, expires: int, signature: str, user=Depends(curren
 class ReviewInput(BaseModel):
     status: str = Field(pattern=r"^(accepted|rejected)$")
     note: str = Field(default="", max_length=1000)
+    expires_on: date | None = None
 
 
 @router.post("/admin/verification/{document_id}/review")
 def review(document_id: str, data: ReviewInput, user=Depends(roles("admin")), db=Depends(get_db)):
     d = allowed(db, document_id, user)
-    d.status, d.reviewer_note = data.status, data.note
+    requirement = db.get(DocumentRequirement, d.requirement_id) if d.requirement_id else None
+    expires_on = data.expires_on or d.expires_on
+    if data.status == "accepted" and requirement and requirement.needs_expiry and (not expires_on or expires_on < today()):
+        raise HTTPException(422, "لا يُقبل المستند دون تاريخ انتهاء ساري")
+    d.status, d.reviewer_note, d.expires_on = data.status, data.note, expires_on
+    db.add(
+        Notification(
+            user_id=d.owner_id,
+            message="مراجعة «" + d.kind + "»: " + ("مقبول" if data.status == "accepted" else "مرفوض") + (" — " + data.note if data.note else ""),
+        )
+    )
     audit(db, user, "verification." + data.status, d.id)
     db.commit()
     return document_json(d)

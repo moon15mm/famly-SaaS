@@ -4,6 +4,7 @@ import Link from "next/link";
 import { api, post, Product, Category, money, date, status } from "@/lib/api";
 import { useStore } from "./provider";
 import { DocumentsPanel, ReportPanel, PlanDetails } from "./business-tools";
+import { ContractsAdmin } from "./compliance";
 type Job = {
   id: string;
   kind: string;
@@ -115,6 +116,7 @@ export function AdminOperations({ tab }: { tab: string }) {
     }
   }
   if (tab === "documents") return <DocumentsPanel admin />;
+  if (tab === "contracts") return <ContractsAdmin />;
   if (tab === "reports") return <ReportPanel scope="admin" />;
   return (
     <>

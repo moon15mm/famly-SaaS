@@ -15,6 +15,18 @@ import {
 } from "./account-tools";
 import { DocumentsPanel, ReceiptPage } from "./business-tools";
 import { Policy } from "./policies";
+import { CompliancePanel, ContractCopy } from "./compliance";
+import { useStore } from "./provider";
+function Verification() {
+  const { user } = useStore();
+  if (user?.role === "admin") return <DocumentsPanel admin />;
+  return (
+    <>
+      <CompliancePanel />
+      <DocumentsPanel />
+    </>
+  );
+}
 export function RouteView({ path }: { path: string[] }) {
   switch (path[0]) {
     case "addresses":
@@ -27,7 +39,7 @@ export function RouteView({ path }: { path: string[] }) {
       return (
         <Gate>
           <div className="container page">
-            <DocumentsPanel />
+            <Verification />
           </div>
         </Gate>
       );
@@ -43,6 +55,12 @@ export function RouteView({ path }: { path: string[] }) {
       return (
         <Gate>
           <ReceiptPage id={path[1]} />
+        </Gate>
+      );
+    case "contracts":
+      return (
+        <Gate>
+          <ContractCopy id={path[1]} />
         </Gate>
       );
     case "invoices":

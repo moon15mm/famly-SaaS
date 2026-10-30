@@ -35,6 +35,7 @@ export default async function Page({
     "track",
     "receipt",
     "invoices",
+    "contracts",
   ];
   const policy = ["terms", "privacy", "delivery", "refund", "about"];
   const valid =

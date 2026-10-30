@@ -110,6 +110,7 @@ function AdminContent() {
           ["products", "المنتجات"],
           ["categories", "التصنيفات"],
           ["documents", "المستندات"],
+          ["contracts", "العقود والمتطلبات"],
           ["reports", "التقارير"],
           ["outbox", "رسائل النظام"],
           ["privacy", "الخصوصية"],

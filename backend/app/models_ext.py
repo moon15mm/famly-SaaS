@@ -1,6 +1,6 @@
 """Account lifecycle, addresses, scheduling, subscriptions and private verification."""
 
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Text, Float, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Boolean, Date, DateTime, ForeignKey, Text, Float, UniqueConstraint
 from .db import Base
 from .models import uid, now
 
@@ -86,6 +86,10 @@ class VerificationDocument(Base):
     status = Column(String(20), nullable=False, default="pending")
     reviewer_note = Column(String(1000), nullable=False, default="")
     created_at = Column(DateTime, nullable=False, default=now)
+    requirement_id = Column(
+        ForeignKey("document_requirements.id", name="fk_verification_documents_requirement_id_document_requirements"), index=True
+    )
+    expires_on = Column(Date)
 
 
 class TelegramPendingPhoto(Base):
@@ -119,6 +123,47 @@ class DeliveryRejection(Base):
     __tablename__ = "delivery_rejections"
     order_id = Column(ForeignKey("orders.id"), primary_key=True)
     driver_id = Column(ForeignKey("users.id"), primary_key=True)
+
+
+class DocumentRequirement(Base):
+    """A document type a role must (or may) provide; editable by administrators."""
+
+    __tablename__ = "document_requirements"
+    id = Column(String(50), primary_key=True)
+    role = Column(String(16), nullable=False, index=True)
+    title = Column(String(100), nullable=False)
+    description = Column(String(500), nullable=False, default="")
+    required = Column(Boolean, nullable=False, default=True)
+    needs_expiry = Column(Boolean, nullable=False, default=False)
+    active = Column(Boolean, nullable=False, default=True)
+    position = Column(Integer, nullable=False, default=0)
+
+
+class ContractVersion(Base):
+    """Published contract text; immutable, a change is a new version that everyone re-accepts."""
+
+    __tablename__ = "contract_versions"
+    __table_args__ = (UniqueConstraint("role", "version"),)
+    id = Column(String(32), primary_key=True, default=uid)
+    role = Column(String(16), nullable=False, index=True)
+    version = Column(Integer, nullable=False)
+    title = Column(String(150), nullable=False)
+    body = Column(Text, nullable=False)
+    body_hash = Column(String(64), nullable=False)
+    published_at = Column(DateTime, nullable=False, default=now)
+    published_by = Column(ForeignKey("users.id"))
+
+
+class ContractAcceptance(Base):
+    __tablename__ = "contract_acceptances"
+    __table_args__ = (UniqueConstraint("user_id", "contract_id"),)
+    id = Column(String(32), primary_key=True, default=uid)
+    user_id = Column(ForeignKey("users.id"), nullable=False, index=True)
+    contract_id = Column(ForeignKey("contract_versions.id"), nullable=False)
+    full_name = Column(String(100), nullable=False)
+    accepted_at = Column(DateTime, nullable=False, default=now)
+    ip = Column(String(64), nullable=False, default="")
+    user_agent = Column(String(200), nullable=False, default="")
 
 
 class DriverPosition(Base):

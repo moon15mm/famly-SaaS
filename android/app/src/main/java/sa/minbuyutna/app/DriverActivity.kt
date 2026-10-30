@@ -91,7 +91,7 @@ class DriverModel(app: Application) : AndroidViewModel(app) {
         private set
     var notices by mutableStateOf<List<Notice>>(emptyList())
         private set
-    var documents by mutableStateOf<List<DriverDocument>>(emptyList())
+    var compliance by mutableStateOf<Compliance?>(null)
         private set
 
     private fun api() = DriverApi(origin) { session.token(origin) }
@@ -134,7 +134,7 @@ class DriverModel(app: Application) : AndroidViewModel(app) {
                 Tab.HISTORY -> history = history()
                 Tab.MORE -> {
                     notices = notices()
-                    documents = documents()
+                    compliance = compliance()
                 }
                 else -> Unit
             }
@@ -213,7 +213,17 @@ class DriverModel(app: Application) : AndroidViewModel(app) {
 
     fun loadMore() = call(action = false) {
         notices = notices()
-        documents = documents()
+        compliance = compliance()
+    }
+
+    fun sign(fullName: String) {
+        val contract = compliance?.contract ?: return
+        call {
+            acceptContract(contract.id, fullName.trim())
+            message = "تم توقيع العقد"
+            compliance = compliance()
+            refresh()
+        }
     }
 
     fun markRead() = call {
@@ -221,7 +231,7 @@ class DriverModel(app: Application) : AndroidViewModel(app) {
         notices = notices()
     }
 
-    fun upload(uri: Uri, kind: String) = call {
+    fun upload(uri: Uri, requirement: Requirement, expiresOn: String?) = call {
         val resolver = getApplication<Application>().contentResolver
         val mime = resolver.getType(uri).orEmpty()
         if (!mime.startsWith("image/")) throw ApiException(0, "اختر صورة واضحة للمستند")
@@ -233,9 +243,9 @@ class DriverModel(app: Application) : AndroidViewModel(app) {
             "image/webp" -> "webp"
             else -> "jpg"
         }
-        upload(kind, DriverApi.Upload("document.$extension", mime, bytes))
-        message = "رُفع المستند للمراجعة"
-        documents = documents()
+        uploadRequirement(requirement.id, expiresOn, DriverApi.Upload("document.$extension", mime, bytes))
+        message = "رُفع «" + requirement.title + "» للمراجعة"
+        compliance = compliance()
     }
 
     fun logout() {
@@ -264,7 +274,7 @@ class DriverModel(app: Application) : AndroidViewModel(app) {
         trip = null
         history = emptyList()
         notices = emptyList()
-        documents = emptyList()
+        compliance = null
         tab = Tab.HOME
         message = text
     }

@@ -10,7 +10,7 @@ from sqlalchemy import text
 from .config import settings
 from .db import engine, get_db
 from . import auth, catalog, orders, payments, delivery, account, admin, telegram
-from . import lifecycle, addresses, subscriptions, documents, scheduling, admin_ext
+from . import lifecycle, addresses, subscriptions, documents, scheduling, admin_ext, compliance
 
 
 @asynccontextmanager
@@ -74,6 +74,8 @@ async def security_headers(request: Request, call_next):
             "/api/dev",
             "/api/subscription",
             "/api/favorites",
+            "/api/compliance",
+            "/api/contracts",
         )
     ):
         response.headers["Cache-Control"] = "no-store"
@@ -111,6 +113,7 @@ for route in [
     documents.router,
     scheduling.router,
     admin_ext.router,
+    compliance.router,
 ]:
     app.include_router(route, prefix="/api")
 

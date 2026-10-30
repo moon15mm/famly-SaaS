@@ -247,6 +247,8 @@ type DocumentRow = {
   status: string;
   reviewer_note: string;
   created_at: string;
+  requirement_id?: string | null;
+  expires_on?: string | null;
 };
 export function DocumentsPanel({ admin = false }: { admin?: boolean }) {
   const [items, setItems] = useState<DocumentRow[]>([]),
@@ -333,7 +335,10 @@ export function DocumentsPanel({ admin = false }: { admin?: boolean }) {
                     : "بانتظار المراجعة"}
               </span>
             </div>
-            <p>{date(d.created_at)}</p>
+            <p>
+              {date(d.created_at)}
+              {d.expires_on ? " · ينتهي في " + d.expires_on : ""}
+            </p>
             {admin && <small>معرف المالك: {d.owner_id.slice(0, 10)}</small>}
             {d.reviewer_note && <p>{d.reviewer_note}</p>}
             <button
@@ -365,11 +370,13 @@ export function DocumentsPanel({ admin = false }: { admin?: boolean }) {
                   const values = Object.fromEntries(
                     new FormData(e.currentTarget),
                   );
+                  // An empty date field means "keep the uploaded expiry".
+                  const body = {
+                    ...values,
+                    expires_on: values.expires_on || null,
+                  };
                   try {
-                    await post(
-                      "/admin/verification/" + d.id + "/review",
-                      values,
-                    );
+                    await post("/admin/verification/" + d.id + "/review", body);
                     load();
                     toast("سجلت نتيجة المراجعة");
                   } catch (e) {
@@ -383,6 +390,14 @@ export function DocumentsPanel({ admin = false }: { admin?: boolean }) {
                     <option value="accepted">قبول المستند بعد التحقق</option>
                     <option value="rejected">رفض المستند</option>
                   </select>
+                </label>
+                <label>
+                  تاريخ الانتهاء — يُصحَّح عند الحاجة
+                  <input
+                    name="expires_on"
+                    type="date"
+                    defaultValue={d.expires_on || ""}
+                  />
                 </label>
                 <label>
                   ملاحظة للأسرة أو السائق

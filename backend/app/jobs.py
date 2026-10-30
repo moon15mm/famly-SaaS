@@ -1,5 +1,6 @@
 import logging
 import secrets
+import time
 from datetime import timedelta
 import httpx
 from sqlalchemy import select, update, or_
@@ -9,6 +10,45 @@ from .models_ext import Subscription, EmailMessage, DriverPosition
 from .orders import restore_stock, notify
 
 log = logging.getLogger("worker")
+SWEEP_SECONDS = 60
+_swept_at = 0.0
+
+
+def compliance_sweep(db):
+    """Ends shifts whose contract or required documents lapsed, and warns once before documents expire."""
+    from sqlalchemy import delete
+    from .compliance import EXPIRY_NOTICE_DAYS, status as compliance_status, today
+    from .models_ext import DocumentRequirement, VerificationDocument
+
+    for driver in db.scalars(select(User).where(User.role == "driver", User.available.is_(True))):
+        state = compliance_status(db, driver, include_body=False)
+        if state["complete"]:
+            continue
+        driver.available = False
+        if not driver.active_trip_id:
+            db.execute(delete(DriverPosition).where(DriverPosition.driver_id == driver.id))
+        db.add(Notification(user_id=driver.id, message="توقف استقبال المشاوير لنقص المتطلبات: " + "، ".join(state["missing"])))
+    day = today()
+    noticed = select(Audit.resource_id).where(Audit.action == "document.expiry.notice")
+    for document in db.scalars(
+        select(VerificationDocument)
+        .join(DocumentRequirement, DocumentRequirement.id == VerificationDocument.requirement_id)
+        .where(
+            VerificationDocument.status == "accepted",
+            DocumentRequirement.needs_expiry.is_(True),
+            DocumentRequirement.active.is_(True),
+            VerificationDocument.expires_on >= day,
+            VerificationDocument.expires_on <= day + timedelta(days=EXPIRY_NOTICE_DAYS),
+            VerificationDocument.id.not_in(noticed),
+        )
+    ):
+        db.add(Audit(action="document.expiry.notice", resource_id=document.id))
+        db.add(
+            Notification(
+                user_id=document.owner_id,
+                message="ينتهي «" + document.kind + "» في " + document.expires_on.isoformat() + "؛ يلزم رفع نسخة سارية قبل انتهائه",
+            )
+        )
 
 
 def maintenance(db):
@@ -72,6 +112,10 @@ def maintenance(db):
     db.execute(delete(Session).where(Session.expires_at < now()))
     # Locations are kept only while useful for an ongoing shift or delivery.
     db.execute(delete(DriverPosition).where(DriverPosition.updated_at < now() - timedelta(hours=2)))
+    global _swept_at
+    if time.monotonic() - _swept_at >= SWEEP_SECONDS:
+        _swept_at = time.monotonic()
+        compliance_sweep(db)
     db.execute(update(EmailMessage).where(EmailMessage.expires_at < now()).values(body="[انتهت صلاحية الرسالة]"))
     db.commit()
 

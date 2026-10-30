@@ -22,6 +22,7 @@ import {
   DocumentsPanel,
 } from "./business-tools";
 import { MapPicker, Point } from "./map-picker";
+import { CompliancePanel, Compliance } from "./compliance";
 export function Seller() {
   return (
     <Gate role="seller">
@@ -35,6 +36,7 @@ function SellerContent() {
     [store, setStore] = useState<Household | null>(null),
     [editor, setEditor] = useState<Product | null | undefined>(undefined),
     [deleting, setDeleting] = useState(""),
+    [compliance, setCompliance] = useState<Compliance | null>(null),
     [error, setError] = useState("");
   const { toast } = useStore();
   async function pause(p: Product) {
@@ -76,6 +78,9 @@ function SellerContent() {
     api<Household>("/seller/household")
       .then(setStore)
       .catch((e) => setError(e.message));
+    api<Compliance>("/compliance")
+      .then(setCompliance)
+      .catch(() => {});
   }
   useEffect(load, []);
   return (
@@ -89,6 +94,15 @@ function SellerContent() {
             ? "تمت مراجعة الأسرة"
             : "بانتظار مراجعة واعتماد الإدارة قبل النشر"}
         </p>
+        {compliance?.contract && !compliance.contract.accepted && (
+          <p className="notice" role="alert">
+            يلزم توقيع «{compliance.contract.title}» قبل إضافة منتجات جديدة أو
+            نشرها. يبقى متجرك وطلباتك القائمة كما هي.{" "}
+            <button className="text-button" onClick={() => setTab("documents")}>
+              مراجعة العقد وتوقيعه
+            </button>
+          </p>
+        )}
         {store?.verified && store.storefront_visible === false && (
           <p className="notice" role="alert">
             متجرك مخفي عن العملاء ولا يستقبل طلبات جديدة لانتهاء الاشتراك أو
@@ -106,7 +120,7 @@ function SellerContent() {
             [Settings, "settings", "إعدادات المتجر"],
             [Send, "telegram", "ربط Telegram"],
             [ChartNoAxesCombined, "reports", "المبيعات والاشتراك"],
-            [Settings, "documents", "مستندات الاعتماد"],
+            [Settings, "documents", "العقد والمستندات"],
           ].map(([Icon, key, label]) => {
             const I = Icon as typeof Store;
             return (
@@ -249,7 +263,12 @@ function SellerContent() {
               <SellerReports />
             </>
           )}
-          {tab === "documents" && <DocumentsPanel />}
+          {tab === "documents" && (
+            <>
+              <CompliancePanel onChange={setCompliance} />
+              <DocumentsPanel />
+            </>
+          )}
         </div>
       </div>
       {editor !== undefined && (

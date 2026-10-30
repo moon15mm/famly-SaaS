@@ -5,6 +5,7 @@ from .db import get_db
 from .models import User, Household, Product, Order, Audit, Plan, SupportTicket, DeliveryRule, Category
 from .schemas import PlanInput
 from .security import roles, audit
+from .compliance import require_ready
 
 router = APIRouter(prefix="/admin", tags=["administration"], dependencies=[Depends(roles("admin"))])
 
@@ -61,6 +62,8 @@ def verify_household(household_id: str, verified: bool, user=Depends(roles("admi
     h = db.get(Household, household_id)
     if not h:
         raise HTTPException(404, "الأسرة غير موجودة")
+    if verified and not h.verified:
+        require_ready(db, db.get(User, h.owner_id), "لا تُعتمد الأسرة قبل اكتمال متطلباتها")
     h.verified = verified
     audit(db, user, "household.verify." + str(verified), h.id)
     db.commit()
@@ -82,6 +85,8 @@ def user_status(user_id: str, active: bool, driver_verified: bool = False, user=
         raise HTTPException(422, "لا يمكن تعديل هذا الحساب من هنا")
     if target.role == "driver" and target.active_trip_id and (not active or not driver_verified):
         raise HTTPException(409, "راجع الرحلة النشطة وأعد إسنادها قبل تعطيل السائق أو سحب أهليته")
+    if target.role == "driver" and driver_verified and not target.driver_verified:
+        require_ready(db, target, "لا يُعتمد السائق قبل اكتمال متطلباته")
     target.active = active
     if target.role == "driver":
         target.driver_verified = driver_verified

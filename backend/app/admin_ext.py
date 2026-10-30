@@ -35,6 +35,11 @@ def product_status(product_id: str, data: ProductState, user=Depends(roles("admi
     h = db.get(Household, p.household_id)
     fields = {k: getattr(p, k) for k in ProductInput.model_fields}
     fields["status"] = data.status
+    if data.status == "published" and p.status != "published":
+        from .compliance import require_signed
+        from .models import User
+
+        require_signed(db, db.get(User, h.owner_id), "لم توقّع الأسرة العقد الحالي؛ لا يُنشر منتج جديد لها")
     if data.status == "published":
         validate_product(db, h, ProductInput(**fields))
     p.status, p.featured = data.status, data.featured

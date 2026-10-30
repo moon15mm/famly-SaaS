@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Truck, MapPin, ArrowLeft } from "lucide-react";
 import { api, post, money, date } from "@/lib/api";
 import { useStore } from "./provider";
+import { CompliancePanel } from "./compliance";
 import { Gate, OrderList } from "./account";
 type Offer = {
   id: string;
@@ -66,6 +67,7 @@ function DriverContent() {
           {user?.available ? "متاح للرحلات — إيقاف التوفر" : "تفعيل التوفر"}
         </button>
       </div>
+      <CompliancePanel />
       {!user?.driver_verified ? (
         <div className="notice">
           حسابك ينتظر مراجعة الإدارة وأهليتك للتوصيل. لا تتوفر عروض أو عناوين

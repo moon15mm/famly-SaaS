@@ -8,6 +8,7 @@ from .models import Order, OrderItem, Household, Notification, now
 from .security import roles, digest, audit, limit
 from .orders import visible_order, notify
 from .models_ext import DeliveryIssue, DeliveryRejection, DriverPosition
+from .compliance import require_ready, status as compliance_status
 from pydantic import BaseModel, Field
 from datetime import timedelta
 
@@ -29,6 +30,8 @@ def distance_km(lat1, lon1, lat2, lon2):
 @router.post("/availability")
 def availability(available: bool, user=Depends(roles("driver")), db=Depends(get_db)):
     qualified(user)
+    if available:
+        require_ready(db, user, "يلزم قبول عقد السائق واعتماد مستنداته المطلوبة قبل بدء الدوام")
     user.available = available
     if not available and not user.active_trip_id:
         db.execute(delete(DriverPosition).where(DriverPosition.driver_id == user.id))
@@ -69,6 +72,7 @@ def summary(user=Depends(roles("driver")), db=Depends(get_db)):
         )
     ).one()
     active = db.scalar(select(Order).where(Order.driver_id == user.id, Order.status.in_(ACTIVE_TRIP)))
+    compliance = compliance_status(db, user, include_body=False)
     return {
         "name": user.name,
         "driver_verified": user.driver_verified,
@@ -76,6 +80,7 @@ def summary(user=Depends(roles("driver")), db=Depends(get_db)):
         "active_trip": {"id": active.id, "status": active.status} if active else None,
         "delivered_trips": trips,
         "declared_fees": fees,
+        "compliance": {"complete": compliance["complete"], "missing": compliance["missing"]},
         "mode": "test",
     }
 
@@ -125,6 +130,8 @@ def accept(order_id: str, user=Depends(roles("driver")), db=Depends(get_db)):
     qualified(user)
     if not user.available:
         raise HTTPException(409, "فعّل التوفر أولًا")
+    # A document can expire during a shift; the worker also ends such shifts.
+    require_ready(db, user, "يلزم تحديث متطلبات السائق قبل قبول المشاوير")
     active = db.scalar(select(Order).where(Order.driver_id == user.id, Order.status.in_(["assigned", "picked_up", "in_transit"])))
     if active:
         raise HTTPException(409, "أكمل رحلتك الحالية أولًا")
