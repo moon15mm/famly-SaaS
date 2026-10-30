@@ -1,0 +1,51 @@
+{
+  "completed": false,
+  "status": "failed",
+  "date_saudi": "2026-10-30 01:34:56",
+  "node": "v24.22.1",
+  "checkpoints": [
+    {
+      "id": "O1",
+      "role": "المالك",
+      "title": "الدخول ومراجعة جميع أقسام الإدارة",
+      "status": "passed"
+    },
+    {
+      "id": "S1",
+      "role": "الأسرة",
+      "title": "التسجيل وإعداد المتجر والتوصيل المجاني",
+      "status": "passed"
+    },
+    {
+      "id": "S2",
+      "role": "الأسرة",
+      "title": "صورة ومسودة وخياران ومنع النشر قبل الاعتماد",
+      "status": "passed"
+    },
+    {
+      "id": "O2",
+      "role": "المالك",
+      "title": "اعتماد الأسرة ثم إتاحة نشر المنتج",
+      "status": "passed"
+    },
+    {
+      "id": "C1",
+      "role": "العميل",
+      "title": "التسجيل والعنوان والإحداثيات وجمع خيارين في السلة",
+      "status": "failed"
+    }
+  ],
+  "console_errors": [
+    {
+      "role": "customer",
+      "message": "HTTP 500 /api/products/6a155c01e37449a288128b3f05717ba3"
+    },
+    {
+      "role": "customer",
+      "message": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    }
+  ],
+  "order_ids": [],
+  "cleanup": "Only audit products paused and own household hidden; order history preserved; delivery rule restored",
+  "limits": "Local simulated money and delivery only; no external SMTP, Telegram, AI or gateway connection asserted"
+}

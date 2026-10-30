@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "completed_synthetic_orders": [
+    "8198ec179faa49bebd363aa8ca0d5cfd",
+    "8676460546424984b7877ff2ee77be98"
+  ],
+  "method": "Normal local role APIs and separate pickup/delivery proofs; no SQL mutations or deletion"
+}

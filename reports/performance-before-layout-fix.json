@@ -1,0 +1,356 @@
+{
+  "generated_at": "2026-10-29T19:02:34.388Z",
+  "browser": "Microsoft Edge / Playwright",
+  "samples_per_mode": 3,
+  "results": [
+    {
+      "mode": "desktop-local",
+      "conditions": "Local loopback; unthrottled; fresh browser context; server image cache not flushed",
+      "lcp_ms": 3384,
+      "cls": 0,
+      "observed_interaction_ms": 320,
+      "ttfb_ms": 35,
+      "dom_content_loaded_ms": 3039,
+      "transfer_bytes": 407009,
+      "layout_shifts": []
+    },
+    {
+      "mode": "desktop-local",
+      "conditions": "Local loopback; unthrottled; fresh browser context; server image cache not flushed",
+      "lcp_ms": 4300,
+      "cls": 0.7987,
+      "observed_interaction_ms": 80,
+      "ttfb_ms": 34,
+      "dom_content_loaded_ms": 3968,
+      "transfer_bytes": 389918,
+      "layout_shifts": [
+        {
+          "value": 0.004036815125265239,
+          "sources": [
+            {
+              "element": "FORM",
+              "className": "search",
+              "before": {
+                "y": 64.078125,
+                "height": 47.4375
+              },
+              "after": {
+                "y": 64.078125,
+                "height": 47.4375
+              }
+            },
+            {
+              "element": "A",
+              "className": "",
+              "before": {
+                "y": 141.578125,
+                "height": 53.4375
+              },
+              "after": {
+                "y": 141.578125,
+                "height": 53.4375
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 829.984375,
+                "height": 17
+              },
+              "after": {
+                "y": 826.984375,
+                "height": 17
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 807.1875,
+                "height": 17
+              },
+              "after": {
+                "y": 804.1875,
+                "height": 17
+              }
+            },
+            {
+              "element": "A",
+              "className": "",
+              "before": {
+                "y": 141.578125,
+                "height": 53.4375
+              },
+              "after": {
+                "y": 141.578125,
+                "height": 53.4375
+              }
+            }
+          ]
+        },
+        {
+          "value": 0.7946354166666667,
+          "sources": [
+            {
+              "element": "MAIN",
+              "className": "",
+              "before": {
+                "y": 196.796875,
+                "height": 490
+              },
+              "after": {
+                "y": 226.796875,
+                "height": 773.203125
+              }
+            },
+            {
+              "element": "FOOTER",
+              "className": "",
+              "before": {
+                "y": 686.796875,
+                "height": 299.984375
+              },
+              "after": {
+                "y": 0,
+                "height": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "desktop-local",
+      "conditions": "Local loopback; unthrottled; fresh browser context; server image cache not flushed",
+      "lcp_ms": 448,
+      "cls": 0,
+      "observed_interaction_ms": 136,
+      "ttfb_ms": 27,
+      "dom_content_loaded_ms": 390,
+      "transfer_bytes": 407017,
+      "layout_shifts": []
+    },
+    {
+      "mode": "mobile-simulated",
+      "conditions": "Local loopback; 390x844; CPU 4x slowdown; 150ms latency; 1.6Mbps download; server image cache not flushed",
+      "lcp_ms": 1672,
+      "cls": 0.1535,
+      "observed_interaction_ms": 104,
+      "ttfb_ms": 26,
+      "dom_content_loaded_ms": 669,
+      "transfer_bytes": 324850,
+      "layout_shifts": [
+        {
+          "value": 0.15353150314868697,
+          "sources": [
+            {
+              "element": "DIV",
+              "className": "hero-visual",
+              "before": {
+                "y": 622.515625,
+                "height": 221.484375
+              },
+              "after": {
+                "y": 702.3125,
+                "height": 141.6875
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 113
+              },
+              "after": {
+                "y": 307.921875,
+                "height": 113
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 56
+              },
+              "after": {
+                "y": 421.921875,
+                "height": 56
+              }
+            },
+            {
+              "element": "P",
+              "className": "",
+              "before": {
+                "y": 436.921875,
+                "height": 45.59375
+              },
+              "after": {
+                "y": 493.921875,
+                "height": 68.390625
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 464.71875,
+                "height": 39.796875
+              },
+              "after": {
+                "y": 518.71875,
+                "height": 39.796875
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "mobile-simulated",
+      "conditions": "Local loopback; 390x844; CPU 4x slowdown; 150ms latency; 1.6Mbps download; server image cache not flushed",
+      "lcp_ms": 1568,
+      "cls": 0.1535,
+      "observed_interaction_ms": 88,
+      "ttfb_ms": 25,
+      "dom_content_loaded_ms": 679,
+      "transfer_bytes": 316721,
+      "layout_shifts": [
+        {
+          "value": 0.15353150314868697,
+          "sources": [
+            {
+              "element": "DIV",
+              "className": "hero-visual",
+              "before": {
+                "y": 622.515625,
+                "height": 221.484375
+              },
+              "after": {
+                "y": 702.3125,
+                "height": 141.6875
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 113
+              },
+              "after": {
+                "y": 307.921875,
+                "height": 113
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 56
+              },
+              "after": {
+                "y": 421.921875,
+                "height": 56
+              }
+            },
+            {
+              "element": "P",
+              "className": "",
+              "before": {
+                "y": 436.921875,
+                "height": 45.59375
+              },
+              "after": {
+                "y": 493.921875,
+                "height": 68.390625
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 464.71875,
+                "height": 39.796875
+              },
+              "after": {
+                "y": 518.71875,
+                "height": 39.796875
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "mobile-simulated",
+      "conditions": "Local loopback; 390x844; CPU 4x slowdown; 150ms latency; 1.6Mbps download; server image cache not flushed",
+      "lcp_ms": 1692,
+      "cls": 0.1535,
+      "observed_interaction_ms": 136,
+      "ttfb_ms": 24,
+      "dom_content_loaded_ms": 644,
+      "transfer_bytes": 316726,
+      "layout_shifts": [
+        {
+          "value": 0.15353150314868697,
+          "sources": [
+            {
+              "element": "DIV",
+              "className": "hero-visual",
+              "before": {
+                "y": 622.515625,
+                "height": 221.484375
+              },
+              "after": {
+                "y": 702.3125,
+                "height": 141.6875
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 113
+              },
+              "after": {
+                "y": 307.921875,
+                "height": 113
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 56
+              },
+              "after": {
+                "y": 421.921875,
+                "height": 56
+              }
+            },
+            {
+              "element": "P",
+              "className": "",
+              "before": {
+                "y": 436.921875,
+                "height": 45.59375
+              },
+              "after": {
+                "y": 493.921875,
+                "height": 68.390625
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 464.71875,
+                "height": 39.796875
+              },
+              "after": {
+                "y": 518.71875,
+                "height": 39.796875
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "limits": "Lab samples only. observed_interaction_ms is one observed interaction, not field INP. No Lighthouse or real-user data. Not a guarantee of Core Web Vitals targets on production."
+}

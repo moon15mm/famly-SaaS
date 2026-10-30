@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "migration": "003_local_workflows",
+  "integrity_check": "ok",
+  "foreign_key_violations": 0
+}

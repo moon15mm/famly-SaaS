@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "scope": "docker compose config --quiet only; containers not started",
+  "private_volume": true,
+  "compose_sha256": "6f493df2f1b6c4bf18b37e50d305723e29eb97fc4edeb284ef3511d8ff47c920"
+}

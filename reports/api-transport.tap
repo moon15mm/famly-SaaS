@@ -1,0 +1,56 @@
+TAP version 13
+# (node:3924) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/lib/api.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to \\\\?\\C:\\Users\\maher\\Desktop\\works\\famly SaaS\\frontend\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: read retries one transient plain-text proxy error
+ok 1 - read retries one transient plain-text proxy error
+  ---
+  duration_ms: 152.855
+  type: 'test'
+  ...
+# Subtest: read retries one disconnected socket
+ok 2 - read retries one disconnected socket
+  ---
+  duration_ms: 93.0356
+  type: 'test'
+  ...
+# Subtest: write never retries a proxy failure and gives a readable error
+ok 3 - write never retries a proxy failure and gives a readable error
+  ---
+  duration_ms: 2.4228
+  type: 'test'
+  ...
+# Subtest: write never retries a network failure or exposes transport diagnostics
+ok 4 - write never retries a network failure or exposes transport diagnostics
+  ---
+  duration_ms: 0.5002
+  type: 'test'
+  ...
+# Subtest: validation errors retain the server's useful message without retry
+ok 5 - validation errors retain the server's useful message without retry
+  ---
+  duration_ms: 1.3139
+  type: 'test'
+  ...
+# Subtest: successful non-JSON response reports a readable protocol error
+ok 6 - successful non-JSON response reports a readable protocol error
+  ---
+  duration_ms: 0.8115
+  type: 'test'
+  ...
+# Subtest: empty successful response does not cause a JSON parser error
+ok 7 - empty successful response does not cause a JSON parser error
+  ---
+  duration_ms: 0.3675
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 792.3395

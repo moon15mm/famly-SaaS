@@ -1,0 +1,136 @@
+import logging
+import secrets
+from datetime import timedelta
+import httpx
+from sqlalchemy import select, update, or_
+from .config import settings
+from .models import Order, Outbox, Household, Notification, Session, User, now
+from .models_ext import Subscription, EmailMessage
+from .orders import restore_stock, notify
+
+log = logging.getLogger("worker")
+
+
+def maintenance(db):
+    from .subscriptions import invoice_for
+    from .models import Plan
+
+    for h in db.scalars(
+        select(Household).where(Household.subscription_status == "trial", Household.trial_ends_at < now()).with_for_update()
+    ):
+        h.subscription_status = "expired"
+        db.add(Notification(user_id=h.owner_id, message="انتهت الفترة التجريبية؛ تبقى إدارة الطلبات متاحة"))
+    for item in db.scalars(select(Subscription).where(Subscription.status == "active").with_for_update()):
+        h = db.get(Household, item.household_id)
+        if item.ends_at and item.ends_at < now():
+            changed = db.execute(
+                update(Subscription).where(Subscription.household_id == h.id, Subscription.status == "active").values(status="expired")
+            )
+            if changed.rowcount:
+                h.subscription_status = "expired"
+                db.add(Notification(user_id=h.owner_id, message="انتهى الاشتراك. جدد اشتراكك من لوحة الأسرة"))
+        elif item.auto_renew and item.ends_at and item.ends_at < now() + timedelta(days=7):
+            plan = db.get(Plan, item.plan_id)
+            if not plan or not plan.active:
+                continue
+            invoice = invoice_for(db, h, plan, item.interval, "renewal-" + item.ends_at.isoformat())
+            from .models import Audit
+
+            if not db.scalar(select(Audit).where(Audit.action == "subscription.renewal.notice", Audit.resource_id == invoice.id)):
+                db.add(Audit(action="subscription.renewal.notice", resource_id=invoice.id))
+                db.add(Notification(user_id=h.owner_id, message="فاتورة تجديد اشتراك جاهزة للمراجعة، دون خصم تلقائي"))
+    for order in db.scalars(select(Order).where(Order.status == "pending_payment", Order.payment_expires_at < now()).with_for_update()):
+        changed = db.execute(
+            update(Order)
+            .where(Order.id == order.id, Order.status == "pending_payment")
+            .values(status="cancelled", payment_status="expired")
+        )
+        if changed.rowcount:
+            restore_stock(db, order)
+            notify(db, order, "انتهت مهلة الدفع وأعيد المخزون")
+    db.execute(
+        update(Order)
+        .where(Order.status == "ready", Order.delivery_method == "paid", Order.driver_id.is_(None), Order.offer_expires_at < now())
+        .values(offer_expires_at=now() + timedelta(minutes=15))
+    )
+    from sqlalchemy import delete
+
+    db.execute(delete(Session).where(Session.expires_at < now()))
+    db.execute(update(EmailMessage).where(EmailMessage.expires_at < now()).values(body="[انتهت صلاحية الرسالة]"))
+    db.commit()
+
+
+def process_outbox(db):
+    pending = list(
+        db.scalars(
+            select(Outbox)
+            .where(
+                Outbox.sent_at.is_(None),
+                Outbox.dead_letter.is_(False),
+                Outbox.next_attempt_at <= now(),
+                or_(Outbox.claimed_until.is_(None), Outbox.claimed_until < now()),
+            )
+            .order_by(Outbox.next_attempt_at)
+            .limit(20)
+        )
+    )
+    for job in pending:
+        token = secrets.token_hex(16)
+        claimed = db.execute(
+            update(Outbox)
+            .where(
+                Outbox.id == job.id,
+                Outbox.sent_at.is_(None),
+                Outbox.dead_letter.is_(False),
+                or_(Outbox.claimed_until.is_(None), Outbox.claimed_until < now()),
+            )
+            .values(claimed_until=now() + timedelta(minutes=2), lease_token=token)
+        )
+        db.commit()
+        if not claimed.rowcount:
+            continue
+        try:
+            if job.kind == "telegram":
+                if not settings.telegram_bot_token:
+                    raise ValueError("telegram_not_configured")
+                with httpx.Client(timeout=15, follow_redirects=False) as client:
+                    response = client.post("https://api.telegram.org/bot" + settings.telegram_bot_token + "/sendMessage", json=job.payload)
+                    response.raise_for_status()
+                    if not response.json().get("ok"):
+                        raise ValueError("telegram_rejected")
+            elif job.kind == "email":
+                from .mail import send
+
+                message = db.get(EmailMessage, job.payload["message_id"])
+                if not message or message.expires_at < now():
+                    raise ValueError("email_expired")
+                send(message)
+                message.sent_at = now()
+                if settings.app_env == "production":
+                    message.body = "[تم الإرسال]"
+            else:
+                raise ValueError("unknown_job")
+            db.execute(
+                update(Outbox)
+                .where(Outbox.id == job.id, Outbox.lease_token == token)
+                .values(sent_at=now(), claimed_until=None, lease_token=None, last_error="")
+            )
+        except Exception as error:
+            attempt = job.attempts + 1
+            db.execute(
+                update(Outbox)
+                .where(Outbox.id == job.id, Outbox.lease_token == token)
+                .values(
+                    attempts=attempt,
+                    next_attempt_at=now() + timedelta(seconds=min(3600, 2 ** min(attempt, 11))),
+                    claimed_until=None,
+                    lease_token=None,
+                    dead_letter=attempt >= 8,
+                    last_error=type(error).__name__,
+                )
+            )
+            log.warning("Outbox retry job=%s attempt=%s error_type=%s", job.id, attempt, type(error).__name__)
+            if attempt == 8:
+                for admin_id in db.scalars(select(User.id).where(User.role == "admin", User.active.is_(True))):
+                    db.add(Notification(user_id=admin_id, message="رسالة متعثرة تحتاج مراجعة الإدارة: " + job.id))
+        db.commit()

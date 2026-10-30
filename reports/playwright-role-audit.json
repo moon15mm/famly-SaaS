@@ -1,0 +1,285 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Users\\maher\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "C:\\Users\\maher\\Desktop\\works\\famly SaaS\\frontend\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "tests/role-play.spec.ts"
+    ],
+    "configFile": "C:\\Users\\maher\\Desktop\\works\\famly SaaS\\frontend\\playwright.config.ts",
+    "rootDir": "C:/Users/maher/Desktop/works/famly SaaS/frontend/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/maher/Desktop/works/famly SaaS/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "C:/Users/maher/Desktop/works/famly SaaS/frontend/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 360000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Users\\maher\\Desktop\\works\\famly SaaS\\frontend\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "desktop",
+        "testDir": "C:\\Users\\maher\\Desktop\\works\\famly SaaS\\frontend\\tests",
+        "snapshotDir": "C:\\Users\\maher\\Desktop\\works\\famly SaaS\\frontend\\tests",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 360000,
+        "use": {
+          "actionTimeout": 15000,
+          "navigationTimeout": 30000,
+          "baseURL": "http://localhost:3000",
+          "channel": "msedge",
+          "headless": true,
+          "screenshot": "only-on-failure",
+          "trace": "retain-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36 Edg/156.0.8078.4",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../reports/playwright.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "role-play.spec.ts",
+      "file": "role-play.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "role play: owner, household, customer and drivers including failures and recovery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1200000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 193918,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "ROLE المالك | O1 | الدخول ومراجعة جميع أقسام الإدارة\n"
+                    },
+                    {
+                      "text": "ROLE الأسرة | S1 | التسجيل وإعداد المتجر والتوصيل المجاني\n"
+                    },
+                    {
+                      "text": "ROLE الأسرة | S2 | صورة ومسودة وخياران ومنع النشر قبل الاعتماد\n"
+                    },
+                    {
+                      "text": "ROLE المالك | O2 | اعتماد الأسرة ثم إتاحة نشر المنتج\n"
+                    },
+                    {
+                      "text": "ROLE العميل | C1 | التسجيل والعنوان والإحداثيات وجمع خيارين في السلة\n"
+                    },
+                    {
+                      "text": "ROLE العميل والأسرة | C2 | اختيار عنوان آخر وتغير السعر بعد مراجعته\n"
+                    },
+                    {
+                      "text": "ROLE السائق والمالك | D1 | تسجيل سائقين ومنع غير المعتمد ثم اعتماد الأهلية\n"
+                    },
+                    {
+                      "text": "ROLE الأسرة والسائق | D2 | جاهزية الطلب ورفض عرض مستقل وإسناد ذري\n"
+                    },
+                    {
+                      "text": "ROLE السائق | D3 | التعثر قبل الاستلام وإعادة العرض لسائق آخر\n"
+                    },
+                    {
+                      "text": "ROLE المالك والسائق | D4 | التعثر بعد الاستلام والتحقق من عودة المنتج قبل إعادة الإسناد\n"
+                    },
+                    {
+                      "text": "ROLE العميل والأسرة | C3 | توصيل مجاني واستلام ذاتي وتقييم وإيصال\n"
+                    },
+                    {
+                      "text": "ROLE العميل والأسرة | C4 | فشل الدفع والإلغاء ورفض الأسرة يعيدان المخزون مرة واحدة\n"
+                    },
+                    {
+                      "text": "ROLE العميل والمالك | O3 | الدعم والتقرير والتنزيل وسجل الأحداث\n"
+                    },
+                    {
+                      "text": "ROLE العميل والمالك | C5 | تصدير البيانات وطلب المحو ومراجعته دون محو السجلات المالية\n"
+                    },
+                    {
+                      "text": "ROLE الأسرة والعميل | S4 | نفاد المخزون والإجازة يمنعان الشراء والعودة تتيح مراجعة السعر\n"
+                    },
+                    {
+                      "text": "ROLE المالك | O4 | منع حذف تصنيف مستخدم بالمنتجات\n"
+                    },
+                    {
+                      "text": "ROLE الأسرة | S3 | اشتراك شهري وفشل ونجاح وتجديد دون تمديد مكرر\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "المالك | O1 | الدخول ومراجعة جميع أقسام الإدارة",
+                      "duration": 8369
+                    },
+                    {
+                      "title": "الأسرة | S1 | التسجيل وإعداد المتجر والتوصيل المجاني",
+                      "duration": 4944
+                    },
+                    {
+                      "title": "الأسرة | S2 | صورة ومسودة وخياران ومنع النشر قبل الاعتماد",
+                      "duration": 5247
+                    },
+                    {
+                      "title": "المالك | O2 | اعتماد الأسرة ثم إتاحة نشر المنتج",
+                      "duration": 3073
+                    },
+                    {
+                      "title": "العميل | C1 | التسجيل والعنوان والإحداثيات وجمع خيارين في السلة",
+                      "duration": 10249
+                    },
+                    {
+                      "title": "العميل والأسرة | C2 | اختيار عنوان آخر وتغير السعر بعد مراجعته",
+                      "duration": 7379
+                    },
+                    {
+                      "title": "السائق والمالك | D1 | تسجيل سائقين ومنع غير المعتمد ثم اعتماد الأهلية",
+                      "duration": 12110
+                    },
+                    {
+                      "title": "الأسرة والسائق | D2 | جاهزية الطلب ورفض عرض مستقل وإسناد ذري",
+                      "duration": 17968
+                    },
+                    {
+                      "title": "السائق | D3 | التعثر قبل الاستلام وإعادة العرض لسائق آخر",
+                      "duration": 5237
+                    },
+                    {
+                      "title": "المالك والسائق | D4 | التعثر بعد الاستلام والتحقق من عودة المنتج قبل إعادة الإسناد",
+                      "duration": 22643
+                    },
+                    {
+                      "title": "العميل والأسرة | C3 | توصيل مجاني واستلام ذاتي وتقييم وإيصال",
+                      "duration": 30131
+                    },
+                    {
+                      "title": "العميل والأسرة | C4 | فشل الدفع والإلغاء ورفض الأسرة يعيدان المخزون مرة واحدة",
+                      "duration": 21858
+                    },
+                    {
+                      "title": "العميل والمالك | O3 | الدعم والتقرير والتنزيل وسجل الأحداث",
+                      "duration": 4211
+                    },
+                    {
+                      "title": "العميل والمالك | C5 | تصدير البيانات وطلب المحو ومراجعته دون محو السجلات المالية",
+                      "duration": 6761
+                    },
+                    {
+                      "title": "الأسرة والعميل | S4 | نفاد المخزون والإجازة يمنعان الشراء والعودة تتيح مراجعة السعر",
+                      "duration": 9910
+                    },
+                    {
+                      "title": "المالك | O4 | منع حذف تصنيف مستخدم بالمنتجات",
+                      "duration": 1227
+                    },
+                    {
+                      "title": "الأسرة | S3 | اشتراك شهري وفشل ونجاح وتجديد دون تمديد مكرر",
+                      "duration": 4303
+                    }
+                  ],
+                  "startTime": "2026-10-29T22:55:23.038Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "1c85306bec175276acaf-e7eaadcf9049f3a35a4f",
+          "file": "role-play.spec.ts",
+          "line": 14,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-29T22:55:20.958Z",
+    "duration": 245569.956,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "completed": false,
+  "status": "failed",
+  "date_saudi": "2026-10-30 01:22:39",
+  "node": "v24.22.1",
+  "checkpoints": [
+    {
+      "id": "O1",
+      "role": "المالك",
+      "title": "الدخول ومراجعة جميع أقسام الإدارة",
+      "status": "passed"
+    },
+    {
+      "id": "S1",
+      "role": "الأسرة",
+      "title": "التسجيل وإعداد المتجر والتوصيل المجاني",
+      "status": "passed"
+    },
+    {
+      "id": "S2",
+      "role": "الأسرة",
+      "title": "صورة ومسودة وخياران ومنع النشر قبل الاعتماد",
+      "status": "passed"
+    },
+    {
+      "id": "O2",
+      "role": "المالك",
+      "title": "اعتماد الأسرة ثم إتاحة نشر المنتج",
+      "status": "passed"
+    },
+    {
+      "id": "C1",
+      "role": "العميل",
+      "title": "التسجيل والعنوان والإحداثيات وجمع خيارين في السلة",
+      "status": "passed"
+    },
+    {
+      "role": "العميل",
+      "id": "C2.1",
+      "title": "عنوان آخر يمسح العنوان والإحداثيات السابقة",
+      "status": "passed"
+    },
+    {
+      "role": "العميل",
+      "id": "C2.2",
+      "title": "لا يتغير الإجمالي بعد الموافقة دون مراجعة جديدة",
+      "status": "passed"
+    },
+    {
+      "id": "C2",
+      "role": "العميل والأسرة",
+      "title": "اختيار عنوان آخر وتغير السعر بعد مراجعته",
+      "status": "passed"
+    },
+    {
+      "id": "D1",
+      "role": "السائق والمالك",
+      "title": "تسجيل سائقين ومنع غير المعتمد ثم اعتماد الأهلية",
+      "status": "passed"
+    },
+    {
+      "id": "D2",
+      "role": "الأسرة والسائق",
+      "title": "جاهزية الطلب ورفض عرض مستقل وإسناد ذري",
+      "status": "passed"
+    },
+    {
+      "id": "D3",
+      "role": "السائق",
+      "title": "التعثر قبل الاستلام وإعادة العرض لسائق آخر",
+      "status": "passed"
+    },
+    {
+      "id": "D4",
+      "role": "المالك والسائق",
+      "title": "التعثر بعد الاستلام والتحقق من عودة المنتج قبل إعادة الإسناد",
+      "status": "passed"
+    },
+    {
+      "id": "C3",
+      "role": "العميل والأسرة",
+      "title": "توصيل مجاني واستلام ذاتي وتقييم وإيصال",
+      "status": "passed"
+    },
+    {
+      "id": "C4",
+      "role": "العميل والأسرة",
+      "title": "فشل الدفع والإلغاء ورفض الأسرة يعيدان المخزون مرة واحدة",
+      "status": "passed"
+    },
+    {
+      "id": "O3",
+      "role": "العميل والمالك",
+      "title": "الدعم والتقرير والتنزيل وسجل الأحداث",
+      "status": "passed"
+    },
+    {
+      "id": "S3",
+      "role": "الأسرة",
+      "title": "اشتراك شهري وفشل ونجاح وتجديد دون تمديد مكرر",
+      "status": "failed"
+    }
+  ],
+  "console_errors": [],
+  "order_ids": [
+    "40859e1c873a44848f4dda3d9c080b37",
+    "3994602bd3d54f92ba4b40962a38c5cc",
+    "b78c817c378d42a88760d5bda57946c2",
+    "de854a2580b845f085879cbbd78e79ba",
+    "a3608b508d9444f68759efcf51dacfdb",
+    "1d6b7401dfb142d69a32282c8caf31b9",
+    "875311ac9f6842a7b36b80ff3f887152"
+  ],
+  "cleanup": "Only audit products paused and own household hidden; order history preserved; delivery rule restored",
+  "limits": "Local simulated money and delivery only; no external SMTP, Telegram, AI or gateway connection asserted"
+}

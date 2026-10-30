@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="sa.minbuyutna.app.EndpointPolicyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="٢٠٢٦-١٠-٣٠T١٠:٣٥:٥٥" hostname="MAHERPC" time="0.015">
+  <properties/>
+  <testcase name="rejectAmbiguousOrUnsafeEndpoints" classname="sa.minbuyutna.app.EndpointPolicyTest" time="0.01"/>
+  <testcase name="canonicalOrigin" classname="sa.minbuyutna.app.EndpointPolicyTest" time="0.0"/>
+  <testcase name="sameOriginIncludesSchemeHostAndPort" classname="sa.minbuyutna.app.EndpointPolicyTest" time="0.002"/>
+  <testcase name="noIntentOrLocalFileExternalNavigation" classname="sa.minbuyutna.app.EndpointPolicyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

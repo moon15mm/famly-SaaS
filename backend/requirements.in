@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+psycopg[binary]
+pydantic-settings
+argon2-cffi
+python-multipart
+pillow
+httpx
+pytest
+ruff
+bandit
+pip-audit

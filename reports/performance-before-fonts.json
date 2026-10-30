@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-10-29T18:55:31.409Z",
+  "browser": "Microsoft Edge / Playwright",
+  "samples_per_mode": 1,
+  "results": [
+    {
+      "mode": "desktop-local",
+      "conditions": "Local loopback; unthrottled; fresh browser context; warm server image cache",
+      "lcp_ms": 8032,
+      "cls": 0.7949,
+      "observed_interaction_ms": 320,
+      "ttfb_ms": 43,
+      "dom_content_loaded_ms": 6267,
+      "transfer_bytes": 386815
+    },
+    {
+      "mode": "mobile-simulated",
+      "conditions": "Local loopback; 390x844; CPU 4x slowdown; 150ms latency; 1.6Mbps download; warm server image cache",
+      "lcp_ms": 2212,
+      "cls": 0.1222,
+      "observed_interaction_ms": 120,
+      "ttfb_ms": 27,
+      "dom_content_loaded_ms": 1157,
+      "transfer_bytes": 304907
+    }
+  ],
+  "limits": "Lab samples only. observed_interaction_ms is one observed interaction, not field INP. No Lighthouse or real-user data. Not a guarantee of Core Web Vitals targets on production."
+}

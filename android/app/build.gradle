@@ -1,0 +1,42 @@
+plugins { id 'com.android.application' }
+
+def platformUrl = providers.gradleProperty('platformUrl').getOrElse('http://localhost:3000')
+if (!(platformUrl ==~ /https?:\/\/[A-Za-z0-9.\-\[\]:]+\/?/)) {
+    throw new GradleException('platformUrl must be an HTTP(S) origin without credentials, path, query or fragment')
+}
+
+android {
+    namespace 'sa.minbuyutna.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'sa.minbuyutna.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '0.2.0'
+        buildConfigField 'String', 'PLATFORM_URL', '"' + platformUrl + '"'
+    }
+    buildFeatures { buildConfig true }
+    buildTypes {
+        debug {
+            applicationIdSuffix '.local'
+            signingConfig signingConfigs.debug
+        }
+        release { minifyEnabled false }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    lint { abortOnError true }
+}
+
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
+    doFirst {
+        if (!platformUrl.startsWith('https://')) {
+            throw new GradleException('Release builds require -PplatformUrl=https://your-real-host')
+        }
+    }
+}
+
+dependencies { testImplementation 'junit:junit:4.13.2' }

@@ -1,0 +1,132 @@
+(node:5608) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/lib/api.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\Users\maher\Desktop\works\famly SaaS\frontend\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ read retries one transient plain-text proxy error (41.1313ms)
+✖ read retries one disconnected socket (0.6187ms)
+✖ write never retries a proxy failure and gives a readable error (4.6671ms)
+✖ write never retries a network failure or exposes transport diagnostics (1.9251ms)
+✔ validation errors retain the server's useful message without retry (1.7261ms)
+✖ successful non-JSON response reports a readable protocol error (1.3487ms)
+✖ empty successful response does not cause a JSON parser error (1.1298ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 1
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 562.9399
+
+✖ failing tests:
+
+test at scripts\test-api-transport.mjs:8:1
+✖ read retries one transient plain-text proxy error (41.1313ms)
+  SyntaxError [Error]: Unexpected token 'I', "Internal S"... is not valid JSON
+      at JSON.parse (<anonymous>)
+      at parseJSONFromBytes (node:internal/deps/undici/undici:4432:19)
+      at successSteps (node:internal/deps/undici/undici:7087:27)
+      at readAllBytes (node:internal/deps/undici/undici:6004:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+test at scripts\test-api-transport.mjs:14:1
+✖ read retries one disconnected socket (0.6187ms)
+  TypeError [Error]: socket reset diagnostic
+      at globalThis.fetch (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/scripts/test-api-transport.mjs:16:56)
+      at api (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/lib/api.ts:79:26)
+      at TestContext.<anonymous> (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/scripts/test-api-transport.mjs:17:26)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at scripts\test-api-transport.mjs:20:1
+✖ write never retries a proxy failure and gives a readable error (4.6671ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /تعذر/. Input:
+  
+  `SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON`
+  
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/scripts/test-api-transport.mjs:23:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: SyntaxError: Unexpected token 'I', "Internal S"... is not valid JSON
+        at JSON.parse (<anonymous>)
+        at parseJSONFromBytes (node:internal/deps/undici/undici:4432:19)
+        at successSteps (node:internal/deps/undici/undici:7087:27)
+        at readAllBytes (node:internal/deps/undici/undici:6004:13)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5),
+    expected: /تعذر/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts\test-api-transport.mjs:26:1
+✖ write never retries a network failure or exposes transport diagnostics (1.9251ms)
+  AssertionError [ERR_ASSERTION]: The validation function is expected to return "true". Received false
+  
+  Caught error:
+  
+  TypeError: private transport diagnostic
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/scripts/test-api-transport.mjs:29:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: private transport diagnostic
+        at globalThis.fetch (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/scripts/test-api-transport.mjs:28:44)
+        at api (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/lib/api.ts:79:26)
+        at TestContext.<anonymous> (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/scripts/test-api-transport.mjs:29:24)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts\test-api-transport.mjs:38:1
+✖ successful non-JSON response reports a readable protocol error (1.3487ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /استجابة|الخادم/. Input:
+  
+  `SyntaxError: Unexpected token '<', "<html>unex"... is not valid JSON`
+  
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/scripts/test-api-transport.mjs:40:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: SyntaxError: Unexpected token '<', "<html>unex"... is not valid JSON
+        at JSON.parse (<anonymous>)
+        at parseJSONFromBytes (node:internal/deps/undici/undici:4432:19)
+        at successSteps (node:internal/deps/undici/undici:7087:27)
+        at readAllBytes (node:internal/deps/undici/undici:6004:13)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5),
+    expected: /استجابة|الخادم/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts\test-api-transport.mjs:42:1
+✖ empty successful response does not cause a JSON parser error (1.1298ms)
+  SyntaxError [Error]: Unexpected end of JSON input
+      at JSON.parse (<anonymous>)
+      at parseJSONFromBytes (node:internal/deps/undici/undici:4432:19)
+      at successSteps (node:internal/deps/undici/undici:7087:27)
+      at consumeBody (node:internal/deps/undici/undici:7093:9)
+      at _Response.json (node:internal/deps/undici/undici:7032:18)
+      at api (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/lib/api.ts:89:31)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///C:/Users/maher/Desktop/works/famly%20SaaS/frontend/scripts/test-api-transport.mjs:44:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

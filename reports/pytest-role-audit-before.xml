@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="19.525" timestamp="2026-10-30T01:07:54.478753+03:00" hostname="MaherPc"><testcase classname="backend.tests.test_role_audit" name="test_checkout_requires_new_consent_when_price_changes" time="18.070"><failure message="AssertionError: assert 201 == 409&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post('/api/orders', json={'items': [{'product_id': 'product0', 'quantity': 2}], 'delivery_method': 'pickup', 'scheduled_at': '2026-10-31T12:00:00Z', 'idempotency_key': 'unique-checkout-key-123', ...})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x000002E5EADA1990&gt;.post">backend\tests\test_role_audit.py:13: in test_checkout_requires_new_consent_when_price_changes
+    assert c["customer"].post("/api/orders", json=data).status_code == 409
+E   AssertionError: assert 201 == 409
+E    +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E    +    where &lt;Response [201 Created]&gt; = post('/api/orders', json={'items': [{'product_id': 'product0', 'quantity': 2}], 'delivery_method': 'pickup', 'scheduled_at': '2026-10-31T12:00:00Z', 'idempotency_key': 'unique-checkout-key-123', ...})
+E    +      where post = &lt;starlette.testclient.TestClient object at 0x000002E5EADA1990&gt;.post</failure></testcase><testcase classname="backend.tests.test_role_audit" name="test_pickup_does_not_store_unneeded_customer_shipping_data" time="0.407"><failure message="AssertionError: assert ('عنوان عميل ل...استلام الذاتي' == ''&#10;  &#10;  + عنوان عميل لا يلزم للاستلام الذاتي)">backend\tests\test_role_audit.py:32: in test_pickup_does_not_store_unneeded_customer_shipping_data
+    assert order["address"] == "" and order["latitude"] is None and order["longitude"] is None
+E   AssertionError: assert ('عنوان عميل ل...استلام الذاتي' == ''
+E     
+E     + عنوان عميل لا يلزم للاستلام الذاتي)</failure></testcase><testcase classname="backend.tests.test_role_audit" name="test_quote_options_have_current_line_prices" time="0.337"><failure message="KeyError: 'items'">backend\tests\test_role_audit.py:42: in test_quote_options_have_current_line_prices
+    assert [(i["option_id"], i["unit_price"]) for i in quote["items"]] == [("small", 8500), ("large", 9000)]
+                                                       ^^^^^^^^^^^^^^
+E   KeyError: 'items'</failure></testcase></testsuite></testsuites>

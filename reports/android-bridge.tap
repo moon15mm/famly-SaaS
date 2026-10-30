@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: retains complete Arabic export when page immediately revokes blob URL
+ok 1 - retains complete Arabic export when page immediately revokes blob URL
+  ---
+  duration_ms: 387.6887
+  type: 'test'
+  ...
+# Subtest: splits binary files into bounded transport messages without byte loss
+ok 2 - splits binary files into bounded transport messages without byte loss
+  ---
+  duration_ms: 626.4906
+  type: 'test'
+  ...
+# Subtest: rejects channel substitution from another frame
+ok 3 - rejects channel substitution from another frame
+  ---
+  duration_ms: 2.6516
+  type: 'test'
+  ...
+# Subtest: routes print to native platform and preserves ordinary navigation
+ok 4 - routes print to native platform and preserves ordinary navigation
+  ---
+  duration_ms: 2.8316
+  type: 'test'
+  ...
+# Subtest: rejects oversized export before transporting bytes
+ok 5 - rejects oversized export before transporting bytes
+  ---
+  duration_ms: 667.1018
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5263.4125

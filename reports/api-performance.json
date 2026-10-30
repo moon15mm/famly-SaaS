@@ -1,0 +1,12 @@
+{
+  "requests": 50,
+  "concurrency": 5,
+  "endpoint": "GET /api/products",
+  "database": "local SQLite",
+  "successful": 50,
+  "elapsed_seconds": 0.703,
+  "p50_ms": 36.28,
+  "p95_ms": 233.97,
+  "max_ms": 325.93,
+  "limits": "Small local read-only load sample; not a capacity guarantee or production PostgreSQL benchmark."
+}

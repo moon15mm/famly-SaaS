@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "node": "v24.22.1",
+  "requests": 74,
+  "successful": 74,
+  "idle_gap_ms": 5050,
+  "idle_batches": 6,
+  "burst_concurrency": 5,
+  "failures": [],
+  "scope": "Local read-only proxy stability check; not a production load guarantee"
+}

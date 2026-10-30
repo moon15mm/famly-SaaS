@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "test_products_hidden": 10,
+  "test_households_hidden": 10,
+  "history_preserved": true,
+  "scope": "Only generated seller-TIMESTAMP@example.test accounts and browser journey products"
+}

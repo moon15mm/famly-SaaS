@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "date_saudi": "2026-10-30",
+  "apk": "releases/android/min-buyutna-local.apk",
+  "bytes": 49789,
+  "sha256": "00e2d4591f454ccfd7930154d996e0cad3c47e710fcfa97bbb685b1221c4fa37",
+  "application_id": "sa.minbuyutna.app.local",
+  "version": "0.2.0",
+  "min_sdk": 26,
+  "target_sdk": 35,
+  "signature": "Android debug, APK Signature Scheme v2 verified",
+  "unit_tests_passed": 4,
+  "bridge_tests_passed": 5,
+  "lint_errors": 0,
+  "lint_warnings": 2,
+  "secrets_and_database_excluded": true,
+  "installation": "passed on isolated Android16 emulator",
+  "interactive_smoke": "pending; initial renderer hang also affected Pixel Launcher; no physical phone tested"
+}

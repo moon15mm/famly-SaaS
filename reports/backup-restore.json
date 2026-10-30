@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "database": "SQLite development only",
+  "backup": "backups\\20261029T230633800622Z",
+  "restore": "backups\\restore-drill-20261029T230633800622Z",
+  "files_verified": 50,
+  "private_files_verified": 7,
+  "counts": {
+    "users": 58,
+    "households": 20,
+    "products": 25,
+    "orders": 43,
+    "alembic_version": 1
+  }
+}

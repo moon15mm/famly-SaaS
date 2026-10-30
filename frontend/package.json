@@ -1,0 +1,31 @@
+{
+  "name": "min-buyutna",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build --webpack",
+    "start": "node scripts/start-production.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test tests/account-business.spec.ts tests/marketplace.spec.ts",
+    "test:roles": "playwright test tests/role-play.spec.ts",
+    "test:transport": "node --test scripts/test-api-transport.mjs",
+    "measure": "node scripts/measure-performance.mjs"
+  },
+  "dependencies": {
+    "leaflet": "1.9.4",
+    "lucide-react": "1.64.0",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/leaflet": "1.9.22",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "prettier": "3.9.10",
+    "typescript": "7.0.2"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "node": "24.22.1",
+  "next": "16.4.3",
+  "bundler": "webpack",
+  "production_build": true,
+  "typescript": true,
+  "containers_tested": false
+}

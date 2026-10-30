@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "date_saudi": "2026-10-30",
+  "url": "http://localhost:3000",
+  "services_left_running": true,
+  "node": "v24.22.1",
+  "api_health": {
+    "status": "ok",
+    "environment": "development",
+    "payments": "test",
+    "delivery": "test",
+    "ai": "disabled"
+  },
+  "homepage_status": 200,
+  "optimized_image_status": 200,
+  "public_products": 8,
+  "published_browser_test_products": 0,
+  "pending_role_audit_trips": 0,
+  "database": "SQLite local application",
+  "migration": "003_local_workflows",
+  "postgresql_test_service": "stopped after successful tests"
+}

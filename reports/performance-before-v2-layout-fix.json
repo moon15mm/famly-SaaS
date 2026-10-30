@@ -1,0 +1,449 @@
+{
+  "generated_at": "2026-10-29T20:35:52.865Z",
+  "browser": "Microsoft Edge / Playwright",
+  "samples_per_mode": 3,
+  "results": [
+    {
+      "mode": "desktop-local",
+      "conditions": "Local loopback; unthrottled; fresh browser context; server image cache not flushed",
+      "lcp_ms": 4156,
+      "cls": 0.0091,
+      "observed_interaction_ms": 120,
+      "ttfb_ms": 63,
+      "dom_content_loaded_ms": 2520,
+      "transfer_bytes": 423111,
+      "layout_shifts": [
+        {
+          "value": 0.00910485538435571,
+          "sources": [
+            {
+              "className": "",
+              "before": {
+                "y": 417.6875,
+                "height": 78
+              },
+              "after": {
+                "y": 404.6875,
+                "height": 78
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 338.1875,
+                "height": 78
+              },
+              "after": {
+                "y": 325.1875,
+                "height": 78
+              }
+            },
+            {
+              "element": "FORM",
+              "className": "search",
+              "before": {
+                "y": 64.078125,
+                "height": 47.4375
+              },
+              "after": {
+                "y": 64.078125,
+                "height": 47.4375
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 870.265625,
+                "height": 42
+              },
+              "after": {
+                "y": 863.265625,
+                "height": 42
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 505.1875,
+                "height": 19
+              },
+              "after": {
+                "y": 502.1875,
+                "height": 19
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "desktop-local",
+      "conditions": "Local loopback; unthrottled; fresh browser context; server image cache not flushed",
+      "lcp_ms": 492,
+      "cls": 0.0091,
+      "observed_interaction_ms": 152,
+      "ttfb_ms": 63,
+      "dom_content_loaded_ms": 440,
+      "transfer_bytes": 423119,
+      "layout_shifts": [
+        {
+          "value": 0.00910485538435571,
+          "sources": [
+            {
+              "className": "",
+              "before": {
+                "y": 417.6875,
+                "height": 78
+              },
+              "after": {
+                "y": 404.6875,
+                "height": 78
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 338.1875,
+                "height": 78
+              },
+              "after": {
+                "y": 325.1875,
+                "height": 78
+              }
+            },
+            {
+              "element": "FORM",
+              "className": "search",
+              "before": {
+                "y": 64.078125,
+                "height": 47.4375
+              },
+              "after": {
+                "y": 64.078125,
+                "height": 47.4375
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 870.265625,
+                "height": 42
+              },
+              "after": {
+                "y": 863.265625,
+                "height": 42
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 505.1875,
+                "height": 19
+              },
+              "after": {
+                "y": 502.1875,
+                "height": 19
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "desktop-local",
+      "conditions": "Local loopback; unthrottled; fresh browser context; server image cache not flushed",
+      "lcp_ms": 448,
+      "cls": 0.0091,
+      "observed_interaction_ms": 80,
+      "ttfb_ms": 63,
+      "dom_content_loaded_ms": 410,
+      "transfer_bytes": 423125,
+      "layout_shifts": [
+        {
+          "value": 0.00910485538435571,
+          "sources": [
+            {
+              "className": "",
+              "before": {
+                "y": 417.6875,
+                "height": 78
+              },
+              "after": {
+                "y": 404.6875,
+                "height": 78
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 338.1875,
+                "height": 78
+              },
+              "after": {
+                "y": 325.1875,
+                "height": 78
+              }
+            },
+            {
+              "element": "FORM",
+              "className": "search",
+              "before": {
+                "y": 64.078125,
+                "height": 47.4375
+              },
+              "after": {
+                "y": 64.078125,
+                "height": 47.4375
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 870.265625,
+                "height": 42
+              },
+              "after": {
+                "y": 863.265625,
+                "height": 42
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 505.1875,
+                "height": 19
+              },
+              "after": {
+                "y": 502.1875,
+                "height": 19
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "mobile-simulated",
+      "conditions": "Local loopback; 390x844; CPU 4x slowdown; 150ms latency; 1.6Mbps download; server image cache not flushed",
+      "lcp_ms": 1524,
+      "cls": 0.1535,
+      "observed_interaction_ms": 128,
+      "ttfb_ms": 54,
+      "dom_content_loaded_ms": 1524,
+      "transfer_bytes": 324511,
+      "layout_shifts": [
+        {
+          "value": 0.15353150314868697,
+          "sources": [
+            {
+              "element": "DIV",
+              "className": "hero-visual",
+              "before": {
+                "y": 622.515625,
+                "height": 221.484375
+              },
+              "after": {
+                "y": 702.3125,
+                "height": 141.6875
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 113
+              },
+              "after": {
+                "y": 307.921875,
+                "height": 113
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 56
+              },
+              "after": {
+                "y": 421.921875,
+                "height": 56
+              }
+            },
+            {
+              "element": "P",
+              "className": "",
+              "before": {
+                "y": 436.921875,
+                "height": 45.59375
+              },
+              "after": {
+                "y": 493.921875,
+                "height": 68.390625
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 464.71875,
+                "height": 39.796875
+              },
+              "after": {
+                "y": 518.71875,
+                "height": 39.796875
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "mobile-simulated",
+      "conditions": "Local loopback; 390x844; CPU 4x slowdown; 150ms latency; 1.6Mbps download; server image cache not flushed",
+      "lcp_ms": 1212,
+      "cls": 0.1535,
+      "observed_interaction_ms": 128,
+      "ttfb_ms": 67,
+      "dom_content_loaded_ms": 1156,
+      "transfer_bytes": 314208,
+      "layout_shifts": [
+        {
+          "value": 0.15353150314868697,
+          "sources": [
+            {
+              "element": "DIV",
+              "className": "hero-visual",
+              "before": {
+                "y": 622.515625,
+                "height": 221.484375
+              },
+              "after": {
+                "y": 702.3125,
+                "height": 141.6875
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 113
+              },
+              "after": {
+                "y": 307.921875,
+                "height": 113
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 56
+              },
+              "after": {
+                "y": 421.921875,
+                "height": 56
+              }
+            },
+            {
+              "element": "P",
+              "className": "",
+              "before": {
+                "y": 436.921875,
+                "height": 45.59375
+              },
+              "after": {
+                "y": 493.921875,
+                "height": 68.390625
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 464.71875,
+                "height": 39.796875
+              },
+              "after": {
+                "y": 518.71875,
+                "height": 39.796875
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "mobile-simulated",
+      "conditions": "Local loopback; 390x844; CPU 4x slowdown; 150ms latency; 1.6Mbps download; server image cache not flushed",
+      "lcp_ms": 1428,
+      "cls": 0.1535,
+      "observed_interaction_ms": 112,
+      "ttfb_ms": 57,
+      "dom_content_loaded_ms": 1409,
+      "transfer_bytes": 324513,
+      "layout_shifts": [
+        {
+          "value": 0.15353150314868697,
+          "sources": [
+            {
+              "element": "DIV",
+              "className": "hero-visual",
+              "before": {
+                "y": 622.515625,
+                "height": 221.484375
+              },
+              "after": {
+                "y": 702.3125,
+                "height": 141.6875
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 113
+              },
+              "after": {
+                "y": 307.921875,
+                "height": 113
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 316.921875,
+                "height": 56
+              },
+              "after": {
+                "y": 421.921875,
+                "height": 56
+              }
+            },
+            {
+              "element": "P",
+              "className": "",
+              "before": {
+                "y": 436.921875,
+                "height": 45.59375
+              },
+              "after": {
+                "y": 493.921875,
+                "height": 68.390625
+              }
+            },
+            {
+              "className": "",
+              "before": {
+                "y": 464.71875,
+                "height": 39.796875
+              },
+              "after": {
+                "y": 518.71875,
+                "height": 39.796875
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "limits": "Lab samples only. observed_interaction_ms is one observed interaction, not field INP. No Lighthouse or real-user data. Not a guarantee of Core Web Vitals targets on production."
+}

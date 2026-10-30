@@ -1,0 +1,109 @@
+name: min-buyutna
+x-backend: &backend
+  image: min-buyutna-api:local
+  build:
+    context: .
+    dockerfile: deploy/backend.Dockerfile
+  env_file: .env
+  environment:
+    APP_ENV: production
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-market}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-market}
+    PUBLIC_ORIGIN: https://${DOMAIN:?Set DOMAIN}
+    COOKIE_SECURE: 'true'
+    PAYMENT_PROVIDER: disabled
+    MEDIA_DIR: /app/data/media
+    PRIVATE_DIR: /app/data/private
+    MAIL_TRANSPORT: ${MAIL_TRANSPORT:-disabled}
+    FORWARDED_ALLOW_IPS: '*'
+  volumes:
+    - media:/app/data/media
+    - private:/app/data/private
+  networks: [internal, edge]
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  mem_limit: 768m
+  cpus: 1.0
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-market}
+      POSTGRES_USER: ${POSTGRES_USER:-market}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes: [postgres:/var/lib/postgresql/data]
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt: [no-new-privileges:true]
+    mem_limit: 768m
+    cpus: 1.0
+  migrate:
+    <<: *backend
+    command: [sh, -c, 'alembic -c backend/alembic.ini upgrade head && python -m app.bootstrap']
+    restart: 'no'
+    depends_on:
+      db: {condition: service_healthy}
+  backend:
+    <<: *backend
+    restart: unless-stopped
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=5)']
+      interval: 20s
+      timeout: 8s
+      retries: 5
+  worker:
+    <<: *backend
+    command: [python, -m, app.worker]
+    restart: unless-stopped
+    depends_on:
+      backend: {condition: service_healthy}
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/frontend.Dockerfile
+    environment:
+      API_INTERNAL_URL: http://backend:8000
+    networks: [internal]
+    restart: unless-stopped
+    depends_on:
+      backend: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:3000").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    mem_limit: 768m
+    cpus: 1.0
+  proxy:
+    image: caddy:2-alpine
+    environment: {DOMAIN: '${DOMAIN:?Set DOMAIN}'}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal, edge]
+    restart: unless-stopped
+    depends_on:
+      frontend: {condition: service_healthy}
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 0.5
+volumes:
+  postgres:
+  media:
+  private:
+  caddy_data:
+  caddy_config:
+networks:
+  internal:
+    internal: true
+  edge:

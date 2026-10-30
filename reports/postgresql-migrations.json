@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "engine": "17.10",
+  "migration": "003_local_workflows",
+  "isolated_schema": true
+}
