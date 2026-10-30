@@ -66,6 +66,7 @@ public class MainActivity extends Activity {
     private ProgressBar progress;
     private LinearLayout offline;
     private TextView connectionLabel;
+    private TextView explanation;
     private String origin;
     private SharedPreferences preferences;
     private ValueCallback<Uri[]> fileCallback;
@@ -149,7 +150,6 @@ public class MainActivity extends Activity {
         connectionLabel.setTextColor(BRAND);
         connectionLabel.setTextSize(11);
         connectionLabel.setPadding(dp(8), dp(3), dp(8), dp(5));
-        refreshLabel();
         root.addView(connectionLabel);
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         root.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
@@ -168,8 +168,7 @@ public class MainActivity extends Activity {
         errorTitle.setTextSize(24);
         errorTitle.setGravity(Gravity.CENTER);
         offline.addView(errorTitle);
-        TextView explanation = new TextView(this);
-        explanation.setText("في النسخة المحلية: شغّل المنصة على الكمبيوتر، ووصل الهاتف عبر USB ثم شغّل سكريبت ربط أندرويد.\n\nإذا كانت المنصة مستضافة، أدخل رابطها الآمن من «رابط المنصة». الحسابات والطلبات تحتاج اتصالًا بالخادم.");
+        explanation = new TextView(this);
         explanation.setGravity(Gravity.CENTER);
         explanation.setTextColor(Color.DKGRAY);
         explanation.setTextSize(16);
@@ -181,11 +180,16 @@ public class MainActivity extends Activity {
         content.addView(offline, new FrameLayout.LayoutParams(-1, -1));
         root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
+        refreshLabel();
     }
 
     private void refreshLabel() {
-        connectionLabel.setText(origin.startsWith("http:")
+        boolean local = origin.startsWith("http:");
+        connectionLabel.setText(local
                 ? "نسخة محلية تجريبية • تتطلب اتصال USB بالكمبيوتر" : "متصل بمنصتك • " + Uri.parse(origin).getHost());
+        explanation.setText(local
+                ? "في النسخة المحلية: شغّل المنصة على الكمبيوتر، ووصل الهاتف عبر USB ثم شغّل سكريبت ربط أندرويد.\n\nللاتصال بالمنصة المستضافة أدخل رابطها الآمن من «رابط المنصة»."
+                : "تحقق من اتصال الهاتف بالإنترنت ثم أعد المحاولة. الحسابات والطلبات تحتاج اتصالًا بالخادم.\n\nلتغيير الخادم استخدم «رابط المنصة».");
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -203,7 +207,7 @@ public class MainActivity extends Activity {
         settings.setSupportZoom(true);
         settings.setBuiltInZoomControls(true);
         settings.setDisplayZoomControls(false);
-        settings.setUserAgentString(settings.getUserAgentString() + " MinBuyutnaAndroid/0.2.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " MinBuyutnaAndroid/" + BuildConfig.VERSION_NAME);
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
         web.setWebViewClient(new WebViewClient() {

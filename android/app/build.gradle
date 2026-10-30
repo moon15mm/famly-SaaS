@@ -1,6 +1,7 @@
 plugins { id 'com.android.application' }
 
-def platformUrl = providers.gradleProperty('platformUrl').getOrElse('http://localhost:3000')
+// The hosted demo by default; pass -PplatformUrl=http://localhost:3000 for the USB development build.
+def platformUrl = providers.gradleProperty('platformUrl').getOrElse('https://buyutna.wardat.xyz')
 if (!(platformUrl ==~ /https?:\/\/[A-Za-z0-9.\-\[\]:]+\/?/)) {
     throw new GradleException('platformUrl must be an HTTP(S) origin without credentials, path, query or fragment')
 }
@@ -12,8 +13,8 @@ android {
         applicationId 'sa.minbuyutna.app'
         minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName '0.2.0'
+        versionCode 2
+        versionName '0.2.1'
         buildConfigField 'String', 'PLATFORM_URL', '"' + platformUrl + '"'
     }
     buildFeatures { buildConfig true }

@@ -1,4 +1,4 @@
-param([string]$JavaHome,[string]$SdkRoot,[string]$GradleExecutable,[switch]$Offline)
+param([string]$JavaHome,[string]$SdkRoot,[string]$GradleExecutable,[switch]$Offline,[string]$PlatformUrl)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 if(-not $JavaHome){$JavaHome='C:/Program Files/Java/jdk-17'}
@@ -21,6 +21,8 @@ $buildArgs=@('-p',(Join-Path $projectRoot 'android'),'assembleDebug','testDebugU
 $localAapt=Join-Path $SdkRoot 'build-tools/35.0.0/aapt2.exe'
 if(Test-Path -LiteralPath $localAapt){$buildArgs+=('-Pandroid.aapt2FromMavenOverride='+$localAapt)}
 if($Offline){$buildArgs+='--offline'}
+# Defaults to the hosted demo in app/build.gradle; pass http://localhost:3000 for the USB build.
+if($PlatformUrl){$buildArgs+=('-PplatformUrl='+$PlatformUrl)}
 & $GradleExecutable @buildArgs
 if($LASTEXITCODE -ne 0){throw 'Android build or verification failed; no new APK accepted'}
 $apk=Join-Path $projectRoot 'android/app/build/outputs/apk/debug/app-debug.apk'
@@ -29,6 +31,7 @@ New-Item -ItemType Directory -Force -Path $releaseFolder | Out-Null
 $output=Join-Path $releaseFolder 'min-buyutna-local.apk'
 Copy-Item -LiteralPath $apk -Destination $output -Force
 $digest=(Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant()
-Set-Content -LiteralPath (Join-Path $releaseFolder 'SHA256SUMS') -Value ($digest+'  min-buyutna-local.apk') -Encoding ascii
+$sums=Get-ChildItem -LiteralPath $releaseFolder -File | Where-Object Name -ne 'SHA256SUMS' | Sort-Object Name | ForEach-Object {(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()+'  '+$_.Name}
+Set-Content -LiteralPath (Join-Path $releaseFolder 'SHA256SUMS') -Value $sums -Encoding ascii
 Write-Output ('APK ready: '+$output)
 Write-Output ('SHA256: '+$digest)

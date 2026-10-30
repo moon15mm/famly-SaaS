@@ -41,3 +41,9 @@
 اختبارات الأدوار الـ21 للموقع وتقاريرها السابقة باقية، لكنها ليست اختبارات أندرويد تفاعلية جديدة. لم يجر تحصيل أو توصيل فعلي؛ تستمر محاكاة المنصة. لم يُنشأ إصدار متجر تجاري موقّع أو يُنشر على Google Play.
 
 مراجع: [WebView وقنوات الرسائل](https://developer.android.com/reference/android/webkit/WebView)، [ربط الخادم المحلي عبر USB](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server)، [أمان الملفات في WebView](https://developer.android.com/privacy-and-security/risks/webview-unsafe-file-inclusion).
+
+## الإصدار 0.2.1 — المنصة المستضافة افتراضيًا (2026-10-30)
+
+يفتح التطبيق الآن https://buyutna.wardat.xyz افتراضيًا بدل http://localhost:3000، ويبقى الربط المحلي ممكنًا من «رابط المنصة» أو بالبناء مع `-PlatformUrl http://localhost:3000`. صارت رسالة تعذر الاتصال تناسب النوعين، ويأخذ معرّف المتصفح رقم الإصدار من البناء. versionCode 2.
+
+نجح assembleDebug و4 اختبارات وحدة وLint بلا أخطاء مع التحذيرين الموثقين. التوقيع v2 بشهادة debug نفسها (`19bc2b15…`)، فيُحدّث النسخة المثبتة. الملفات داخل APK مطابقة للنسخة السابقة عدا البيان والكود المعدّل، ولا تحتوي كلمة مرور العرض. لم يُثبَّت أو يُجرَّب على هاتف حقيقي أو محاكٍ في هذه الجولة. النسخة السابقة محفوظة في `backups/android-before-hosted-default-20261030T130452Z`.

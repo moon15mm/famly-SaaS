@@ -2,7 +2,11 @@
 
 آخر تحديث: 2026-10-30، بتوقيت السعودية. هذا الملف مرجع لاستكمال العمل، وليس ضمانًا بأن حالة الخدمات ستبقى كما كانت بعد إغلاق الجهاز. افحص الحالة الحالية قبل اتخاذ إجراء.
 
-## أحدث تعديل: نشر تجريبي على buyutna.wardat.xyz (2026-10-30)
+## أحدث تعديل: APK 0.2.1 يفتح المنصة المستضافة (2026-10-30)
+
+`releases/android/min-buyutna-local.apk` (versionCode 2) يفتح https://buyutna.wardat.xyz افتراضيًا، بنفس مفتاح debug فيُحدّث النسخة المثبتة. الافتراضي في `android/app/build.gradle`، ولبناء نسخة USB المحلية: `scripts/build-android.ps1 -PlatformUrl http://localhost:3000`. نجح البناء والاختبارات وLint؛ لم يُجرَّب على هاتف بعد. النسخة السابقة في `backups/android-before-hosted-default-20261030T130452Z`.
+
+## تعديل سابق: نشر تجريبي على buyutna.wardat.xyz (2026-10-30)
 
 تعمل نسخة staging على https://buyutna.wardat.xyz فوق سيرفر wardat.xyz (`3.78.128.161`، اسمه في إعداد SSH المحلي `backup-server`). السيرفر مشترك ويستضيف تطبيقات حية أخرى (DarbStu وMizan وMuin وغيرها)؛ طلب المستخدم ألا يتغير أي نظام آخر عليه. لذلك يعمل المشروع كمشروع Compose مستقل باسم `min-buyutna` في `/opt/min-buyutna/deploy/server` على المنفذين `127.0.0.1:8430` (API) و`8431` (الواجهة)، والتغيير المشترك الوحيد ملف nginx `/etc/nginx/sites-available/buyutna.wardat.xyz` وشهادته.
 
