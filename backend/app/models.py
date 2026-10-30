@@ -44,6 +44,8 @@ class Household(Base):
     description = Column(Text, default="")
     city = Column(String(80), default="الرياض")
     pickup_address = Column(Text, default="")
+    pickup_latitude = Column(Float)
+    pickup_longitude = Column(Float)
     verified = Column(Boolean, nullable=False, default=False)
     free_delivery = Column(Boolean, nullable=False, default=False)
     delivery_enabled = Column(Boolean, nullable=False, default=True)

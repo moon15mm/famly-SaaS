@@ -28,6 +28,8 @@ export interface Household {
   opening_hour: number;
   closing_hour: number;
   pickup_address?: string;
+  pickup_latitude?: number | null;
+  pickup_longitude?: number | null;
   subscription_status?: string;
   telegram_linked?: boolean;
   slot_capacity?: number;
@@ -61,6 +63,8 @@ export interface Order {
   scheduled_at: string;
   address?: string;
   pickup_address?: string;
+  pickup_latitude?: number | null;
+  pickup_longitude?: number | null;
   driver_id?: string;
   latitude?: number | null;
   longitude?: number | null;

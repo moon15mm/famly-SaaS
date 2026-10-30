@@ -11,7 +11,7 @@ from .security import current_user, roles, household, audit, digest
 from .providers import TestDeliveryProvider, require_test_payment
 from .config import settings
 from .scheduling import reserve, release
-from .models_ext import ScheduleSlot
+from .models_ext import ScheduleSlot, DriverPosition
 from .catalog import subscription_lapsed
 
 router = APIRouter(tags=["orders"])
@@ -69,7 +69,9 @@ def order_json(db, order, user):
     if user.id == order.customer_id or user.role in {"seller", "admin"} or order.driver_id == user.id:
         result["address"] = order.address
     if (order.delivery_method == "pickup" and order.payment_status == "paid") or order.driver_id == user.id:
-        result["pickup_address"] = db.get(Household, order.household_id).pickup_address
+        h = db.get(Household, order.household_id)
+        result["pickup_address"] = h.pickup_address
+        result["pickup_latitude"], result["pickup_longitude"] = h.pickup_latitude, h.pickup_longitude
     return result
 
 
@@ -311,6 +313,34 @@ def transition(order_id: str, state: str, user=Depends(current_user), db=Depends
     db.commit()
     db.refresh(order)
     return order_json(db, order, user)
+
+
+# The driver's location is shared from acceptance until delivery, never before or after.
+TRACKED = {"assigned", "picked_up", "in_transit"}
+
+
+@router.get("/orders/{order_id}/driver-location")
+def driver_location(order_id: str, user=Depends(current_user), db=Depends(get_db)):
+    order = visible_order(db, order_id, user)
+    if order.delivery_method != "paid" or order.status not in TRACKED or not order.driver_id:
+        raise HTTPException(404, "موقع السائق يظهر أثناء التوصيل فقط")
+    position = db.get(DriverPosition, order.driver_id)
+    h = db.get(Household, order.household_id)
+    result = {"status": order.status, "driver": None, "pickup": None, "dropoff": None}
+    if position:
+        result["driver"] = {
+            "latitude": position.latitude,
+            "longitude": position.longitude,
+            "accuracy": position.accuracy,
+            "updated_at": position.updated_at,
+            "stale": position.updated_at < now() - timedelta(minutes=5),
+        }
+    if order.latitude is not None and order.longitude is not None:
+        result["dropoff"] = {"latitude": order.latitude, "longitude": order.longitude}
+    # Customers of paid deliveries never receive the family's exact pickup point.
+    if user.id != order.customer_id and h.pickup_latitude is not None and h.pickup_longitude is not None:
+        result["pickup"] = {"latitude": h.pickup_latitude, "longitude": h.pickup_longitude}
+    return result
 
 
 @router.post("/orders/{order_id}/review", status_code=201)

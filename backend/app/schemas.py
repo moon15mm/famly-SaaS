@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Register(BaseModel):
@@ -77,6 +77,14 @@ class HouseholdInput(BaseModel):
     closing_hour: int = Field(ge=1, le=23, default=21)
     on_vacation: bool = False
     slot_capacity: int = Field(ge=1, le=100, default=10)
+    pickup_latitude: float | None = Field(default=None, ge=-90, le=90)
+    pickup_longitude: float | None = Field(default=None, ge=-180, le=180)
+
+    @model_validator(mode="after")
+    def paired_pickup(self):
+        if (self.pickup_latitude is None) != (self.pickup_longitude is None):
+            raise ValueError("حدد إحداثيي موقع الاستلام معًا")
+        return self
 
 
 class ReviewInput(BaseModel):

@@ -184,6 +184,34 @@ def reassign(order_id: str, data: ReassignInput, user=Depends(roles("admin")), d
     return {"ok": True}
 
 
+@router.get("/admin/deliveries/active")
+def active_deliveries(user=Depends(roles("admin")), db=Depends(get_db)):
+    from .models import User
+    from .models_ext import DriverPosition
+
+    stale = now() - timedelta(minutes=5)
+    result = []
+    for o in db.scalars(
+        select(Order)
+        .where(Order.status.in_(["assigned", "picked_up", "in_transit"]), Order.driver_id.is_not(None))
+        .order_by(Order.scheduled_at)
+        .limit(100)
+    ):
+        position = db.get(DriverPosition, o.driver_id)
+        result.append(
+            {
+                "order_id": o.id,
+                "status": o.status,
+                "household_name": db.get(Household, o.household_id).name,
+                "driver_name": db.get(User, o.driver_id).name,
+                "scheduled_at": o.scheduled_at,
+                "position_updated_at": position.updated_at if position else None,
+                "stale": not position or position.updated_at < stale,
+            }
+        )
+    return result
+
+
 @router.get("/admin/delivery/waiting")
 def waiting_deliveries(user=Depends(roles("admin")), db=Depends(get_db)):
     current = now()

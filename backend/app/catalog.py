@@ -136,6 +136,8 @@ def my_store(user=Depends(roles("seller")), db=Depends(get_db)):
     return {
         **store_json(h),
         "pickup_address": h.pickup_address,
+        "pickup_latitude": h.pickup_latitude,
+        "pickup_longitude": h.pickup_longitude,
         "subscription_status": h.subscription_status,
         "trial_ends_at": h.trial_ends_at,
         "plan_id": h.plan_id,

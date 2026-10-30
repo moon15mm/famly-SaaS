@@ -70,6 +70,9 @@ def seed():
                 description=description,
                 city=["الرياض", "جدة", "الدمام"][i],
                 pickup_address="عنوان عرض تجريبي — لا يمثل موقع أسرة حقيقية",
+                # Approximate city centres for demo navigation, not real homes.
+                pickup_latitude=[24.7136, 21.5433, 26.4207][i],
+                pickup_longitude=[46.6753, 39.1728, 50.0888][i],
                 verified=True,
                 free_delivery=True,
                 plan_id=plan.id,

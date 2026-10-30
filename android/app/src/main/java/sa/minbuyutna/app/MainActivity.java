@@ -77,6 +77,7 @@ public class MainActivity extends Activity {
     private String transferId, transferName, transferMime;
     private int transferSize;
     private byte[] pendingFile;
+    private String checkedSession = "";
     private boolean downloadBusy;
 
     @Override public void onCreate(Bundle state) {
@@ -90,12 +91,47 @@ public class MainActivity extends Activity {
         } catch (IllegalArgumentException error) {
             origin = EndpointPolicy.normalize(BuildConfig.PLATFORM_URL, BuildConfig.DEBUG);
         }
+        // Drivers work in the native screens; the website stays for customers, families and admins.
+        boolean stayWeb = getIntent().getBooleanExtra(DriverActivity.EXTRA_STAY_WEB, false);
+        if (!stayWeb && DriverLaunch.hasSession(this)) {
+            openDriver();
+            return;
+        }
+        // Opened on purpose from the driver screens: only a new sign-in should switch back.
+        if (stayWeb) {
+            String current = DriverLaunch.sessionFromCookies(CookieManager.getInstance().getCookie(origin));
+            if (current != null) checkedSession = current;
+        }
         makeLayout();
         configureWeb();
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(0, this::goBack);
         }
-        if (state == null || web.restoreState(state) == null) web.loadUrl(origin + "/");
+        String path = getIntent().getStringExtra(DriverActivity.EXTRA_PATH);
+        boolean known = "/register".equals(path) || "/forgot-password".equals(path) || "/login".equals(path);
+        if (state == null || web.restoreState(state) == null) web.loadUrl(origin + (known ? path : "/"));
+    }
+
+    private void openDriver() {
+        startActivity(new Intent(this, DriverActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+        finish();
+    }
+
+    /** After a sign-in on the website, a driver account moves to the native driver screens. */
+    private void detectDriver() {
+        String token = DriverLaunch.sessionFromCookies(CookieManager.getInstance().getCookie(origin));
+        if (token == null || token.equals(checkedSession)) return;
+        checkedSession = token;
+        final String base = origin;
+        io.execute(() -> {
+            String[] account = DriverLaunch.account(base, token);
+            if (account == null || !"driver".equals(account[0])) return;
+            runOnUiThread(() -> {
+                if (isFinishing() || !base.equals(origin)) return;
+                DriverLaunch.remember(this, base, token, account[1]);
+                openDriver();
+            });
+        });
     }
 
     private int dp(int value) { return (int) (value * getResources().getDisplayMetrics().density + .5f); }
@@ -139,6 +175,7 @@ public class MainActivity extends Activity {
         Button menu = button("المزيد", () -> {});
         menu.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(this, menu);
+            popup.getMenu().add("دخول السائقين").setOnMenuItemClickListener(item -> { startActivity(new Intent(this, DriverActivity.class)); return true; });
             popup.getMenu().add("رابط المنصة").setOnMenuItemClickListener(item -> { showConnection(); return true; });
             popup.getMenu().add("طباعة الصفحة أو حفظ PDF").setOnMenuItemClickListener(item -> { printPage(); return true; });
             popup.show();
@@ -224,7 +261,10 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.GONE);
                 CookieManager.getInstance().flush();
-                if (EndpointPolicy.sameOrigin(origin, url) && offline.getVisibility() != View.VISIBLE) installChannel();
+                if (EndpointPolicy.sameOrigin(origin, url) && offline.getVisibility() != View.VISIBLE) {
+                    installChannel();
+                    detectDriver();
+                }
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) showOffline();
@@ -296,6 +336,7 @@ public class MainActivity extends Activity {
                 CookieManager.getInstance().flush();
                 origin = next;
                 preferences.edit().putString("origin", origin).apply();
+                DriverLaunch.forget(this);
                 refreshLabel();
                 web.clearHistory();
                 web.clearCache(true);
@@ -510,7 +551,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override protected void onSaveInstanceState(Bundle state) { super.onSaveInstanceState(state); web.saveState(state); }
+    @Override protected void onSaveInstanceState(Bundle state) { super.onSaveInstanceState(state); if (web != null) web.saveState(state); }
     @Override protected void onPause() { super.onPause(); CookieManager.getInstance().flush(); }
     private void goBack() { if (web.canGoBack()) web.goBack(); else finish(); }
     @SuppressWarnings("deprecation") @Override public void onBackPressed() { goBack(); }
@@ -520,7 +561,7 @@ public class MainActivity extends Activity {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
         if (locationCallback != null) locationCallback.invoke(locationOrigin, false, false);
         io.shutdown();
-        web.destroy();
+        if (web != null) web.destroy();
         super.onDestroy();
     }
 }

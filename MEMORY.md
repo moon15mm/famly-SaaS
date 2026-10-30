@@ -2,7 +2,16 @@
 
 آخر تحديث: 2026-10-30، بتوقيت السعودية. هذا الملف مرجع لاستكمال العمل، وليس ضمانًا بأن حالة الخدمات ستبقى كما كانت بعد إغلاق الجهاز. افحص الحالة الحالية قبل اتخاذ إجراء.
 
-## أحدث تعديل: APK 0.2.1 يفتح المنصة المستضافة (2026-10-30)
+## أحدث تعديل: تطبيق السائق الأصلي وتتبع الموقع (2026-10-30)
+
+طلب المستخدم تطبيقًا أصليًا بكل ما يحتاجه السائق. القرارات: السائق أصلي بالكامل وبقية الأدوار في WebView؛ تنبيهات أثناء الدوام بخدمة أمامية دون Firebase؛ يرى العميل والأسرة موقع السائق من قبول المشوار حتى التسليم فقط.
+
+- الخادم: ترحيل `004_driver_tracking` (جدول `driver_positions` بآخر نقطة فقط، و`pickup_latitude/longitude` للأسر). نقاط جديدة: `POST /api/driver/location` و`GET /api/driver/summary` و`GET /api/orders/{id}/driver-location` و`GET /api/admin/deliveries/active`. العروض فيها `distance_km` ومرتبة حسب القرب. الموقع يُحذف بانتهاء الدوام دون رحلة، ويحذف العامل أي نقطة أقدم من ساعتين. 57 اختبارًا ناجحًا على SQLite و57 على PostgreSQL17.10 (`reports/pytest-postgresql-driver-tracking.xml`). إيقاف عنقود اختبار PostgreSQL بطيء لأن نقطة الحفظ تزامن آلاف ملفات المخططات المؤقتة؛ انتظره ولا توقفه قسرًا.
+- الموقع: خريطة السائق في صفحة الطلب (`frontend/components/driver-map.tsx`)، ونقطة الاستلام في إعدادات الأسرة، والرحلات الجارية في «تعثر التوصيل»، وقسم «موقع السائق» في سياسة الخصوصية.
+- أندرويد 0.3.0 (versionCode 3): ملفات Kotlin في `android/app/src/main/java/sa/minbuyutna/app/` (`DriverActivity` و`DriverUi` و`ShiftService` و`DriverApi` و`DriverSession` و`Driving`). `MainActivity` يحوّل حساب السائق إلى الشاشات الأصلية. البناء الأول احتاج الإنترنت لتنزيل Kotlin وCompose. لم يُجرَّب على هاتف.
+- النشر: طُبق 004 محليًا بعد `scripts/verify_local_backup.py` (النسخة `backups/20261030T135430174444Z`)، وعلى السيرفر بعد نسخة في `/opt/min-buyutna/backups/20261030T135617Z*`. أسر العرض على السيرفر بلا نقاط استلام؛ تُضبط من إعدادات المتجر.
+
+## تعديل سابق: APK 0.2.1 يفتح المنصة المستضافة (2026-10-30)
 
 `releases/android/min-buyutna-local.apk` (versionCode 2) يفتح https://buyutna.wardat.xyz افتراضيًا، بنفس مفتاح debug فيُحدّث النسخة المثبتة. الافتراضي في `android/app/build.gradle`، ولبناء نسخة USB المحلية: `scripts/build-android.ps1 -PlatformUrl http://localhost:3000`. نجح البناء والاختبارات وLint؛ لم يُجرَّب على هاتف بعد. النسخة السابقة في `backups/android-before-hosted-default-20261030T130452Z`.
 

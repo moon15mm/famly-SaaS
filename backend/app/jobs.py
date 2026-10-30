@@ -5,7 +5,7 @@ import httpx
 from sqlalchemy import select, update, or_
 from .config import settings
 from .models import Order, Outbox, Household, Notification, Session, User, Audit, now
-from .models_ext import Subscription, EmailMessage
+from .models_ext import Subscription, EmailMessage, DriverPosition
 from .orders import restore_stock, notify
 
 log = logging.getLogger("worker")
@@ -70,6 +70,8 @@ def maintenance(db):
     from sqlalchemy import delete
 
     db.execute(delete(Session).where(Session.expires_at < now()))
+    # Locations are kept only while useful for an ongoing shift or delivery.
+    db.execute(delete(DriverPosition).where(DriverPosition.updated_at < now() - timedelta(hours=2)))
     db.execute(update(EmailMessage).where(EmailMessage.expires_at < now()).values(body="[انتهت صلاحية الرسالة]"))
     db.commit()
 

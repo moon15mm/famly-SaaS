@@ -17,6 +17,7 @@ import { api, post, Order, Product, money, date, status } from "@/lib/api";
 import { useStore } from "./provider";
 import { AccountSecurity } from "./account-tools";
 import { ProductGrid } from "./products";
+import { DriverMap } from "./driver-map";
 export function Gate({
   role,
   children,
@@ -510,6 +511,11 @@ function OrderDetail({ id }: { id: string }) {
               )}
             </div>
           </div>
+          {!driver &&
+            order.delivery_method === "paid" &&
+            ["assigned", "picked_up", "in_transit"].includes(order.status) && (
+              <DriverMap orderId={id} />
+            )}
           {driver &&
             ["assigned", "picked_up", "in_transit"].includes(order.status) && (
               <form

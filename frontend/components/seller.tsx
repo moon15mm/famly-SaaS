@@ -21,6 +21,7 @@ import {
   ReportPanel,
   DocumentsPanel,
 } from "./business-tools";
+import { MapPicker, Point } from "./map-picker";
 export function Seller() {
   return (
     <Gate role="seller">
@@ -604,7 +605,11 @@ function StoreSettings({
   done: () => void;
 }) {
   const { toast } = useStore();
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false),
+    [pickup, setPickup] = useState<Point>({
+      latitude: store.pickup_latitude ?? null,
+      longitude: store.pickup_longitude ?? null,
+    });
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const d = new FormData(e.currentTarget);
@@ -620,6 +625,8 @@ function StoreSettings({
           free_delivery: d.has("free_delivery"),
           delivery_enabled: d.has("delivery_enabled"),
           on_vacation: d.has("on_vacation"),
+          pickup_latitude: pickup.latitude,
+          pickup_longitude: pickup.longitude,
         }),
       });
       toast("تم تحديث المتجر");
@@ -665,6 +672,12 @@ function StoreSettings({
           defaultValue={store.pickup_address}
         />
       </label>
+      <fieldset className="form-stack">
+        <legend>
+          نقطة الاستلام على الخريطة — تظهر للسائق بعد قبوله المشوار
+        </legend>
+        <MapPicker value={pickup} onChange={setPickup} />
+      </fieldset>
       <div className="form-row">
         <label>
           ساعة الافتتاح

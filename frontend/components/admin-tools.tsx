@@ -1,7 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { api, post, Product, Category, money, date } from "@/lib/api";
+import { api, post, Product, Category, money, date, status } from "@/lib/api";
 import { useStore } from "./provider";
 import { DocumentsPanel, ReportPanel, PlanDetails } from "./business-tools";
 type Job = {
@@ -33,6 +33,14 @@ type Waiting = {
   scheduled_at: string;
   overdue: boolean;
 };
+type ActiveTrip = {
+  order_id: string;
+  status: string;
+  household_name: string;
+  driver_name: string;
+  position_updated_at: string | null;
+  stale: boolean;
+};
 export function AdminOperations({ tab }: { tab: string }) {
   const { toast } = useStore();
   const [products, setProducts] = useState<Product[]>([]),
@@ -41,6 +49,7 @@ export function AdminOperations({ tab }: { tab: string }) {
     [privacy, setPrivacy] = useState<Privacy[]>([]),
     [issues, setIssues] = useState<Issue[]>([]),
     [waiting, setWaiting] = useState<Waiting[]>([]),
+    [trips, setTrips] = useState<ActiveTrip[]>([]),
     [plans, setPlans] = useState<(PlanDetails & { active: boolean })[]>([]),
     [editing, setEditing] = useState<Category | null>(null),
     [error, setError] = useState("");
@@ -68,6 +77,9 @@ export function AdminOperations({ tab }: { tab: string }) {
         .catch((e) => setError(e.message));
       api<Waiting[]>("/admin/delivery/waiting")
         .then(setWaiting)
+        .catch((e) => setError(e.message));
+      api<ActiveTrip[]>("/admin/deliveries/active")
+        .then(setTrips)
         .catch((e) => setError(e.message));
     }
     if (tab === "plans")
@@ -475,6 +487,30 @@ export function AdminOperations({ tab }: { tab: string }) {
       )}
       {tab === "issues" && (
         <>
+          <h2>رحلات جارية</h2>
+          <div className="order-list">
+            {trips.map((t) => (
+              <article key={t.order_id} className="panel">
+                <h3>
+                  طلب #{t.order_id.slice(0, 8)} · {t.household_name}
+                </h3>
+                <p>
+                  السائق {t.driver_name} · {status[t.status]}
+                </p>
+                <span className="badge">
+                  {!t.position_updated_at
+                    ? "لا يشارك موقعه"
+                    : t.stale
+                      ? "آخر موقع قديم"
+                      : "الموقع محدّث"}
+                </span>
+                <Link className="text-link" href={"/orders/" + t.order_id}>
+                  الخريطة وتفاصيل الطلب
+                </Link>
+              </article>
+            ))}
+          </div>
+          {!trips.length && <p className="empty">لا رحلات جارية الآن.</p>}
           <h2>طلبات تنتظر سائقًا</h2>
           <p className="hint">
             يستمر عرض هذه الطلبات على السائقين. إن تجاوز الطلب موعده دون سائق

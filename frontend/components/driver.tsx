@@ -46,7 +46,13 @@ function DriverContent() {
   }
   return (
     <div className="container page">
-      <Link className="text-link" href="/verification">مستندات اعتماد السائق الخاصة</Link>
+      <Link className="text-link" href="/verification">
+        مستندات اعتماد السائق الخاصة
+      </Link>
+      <p className="hint">
+        لمشاركة موقعك أثناء الرحلات وتلقي تنبيهات العروض فورًا، استخدم تطبيق
+        أندرويد.
+      </p>
       <div className="toolbar">
         <div>
           <span className="overline">من بيتهم، لباب البيت</span>
@@ -119,7 +125,23 @@ function DriverContent() {
                       }}
                     >
                       قبول المشوار <ArrowLeft size={17} />
-                    </button><button className="text-button" onClick={async()=>{try{await post('/driver/offers/'+o.id+'/reject');load();toast('تم رفض العرض دون التأثير على السائقين الآخرين');}catch(e){toast((e as Error).message);}}}>رفض العرض</button>
+                    </button>
+                    <button
+                      className="text-button"
+                      onClick={async () => {
+                        try {
+                          await post("/driver/offers/" + o.id + "/reject");
+                          load();
+                          toast(
+                            "تم رفض العرض دون التأثير على السائقين الآخرين",
+                          );
+                        } catch (e) {
+                          toast((e as Error).message);
+                        }
+                      }}
+                    >
+                      رفض العرض
+                    </button>
                   </div>
                 ))}
               </div>

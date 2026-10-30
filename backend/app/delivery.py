@@ -1,15 +1,18 @@
 import secrets
+from math import asin, cos, radians, sin, sqrt
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete, func
+from sqlalchemy.exc import IntegrityError
 from .db import get_db
-from .models import Order, Household, Notification, now
-from .security import roles, digest, audit
+from .models import Order, OrderItem, Household, Notification, now
+from .security import roles, digest, audit, limit
 from .orders import visible_order, notify
-from .models_ext import DeliveryIssue, DeliveryRejection
+from .models_ext import DeliveryIssue, DeliveryRejection, DriverPosition
 from pydantic import BaseModel, Field
 from datetime import timedelta
 
 router = APIRouter(prefix="/driver", tags=["delivery"])
+ACTIVE_TRIP = ["assigned", "picked_up", "in_transit"]
 
 
 def qualified(user):
@@ -17,12 +20,64 @@ def qualified(user):
         raise HTTPException(403, "حساب السائق ينتظر مراجعة الإدارة")
 
 
+def distance_km(lat1, lon1, lat2, lon2):
+    """Straight-line (great-circle) distance; not a road route."""
+    a = sin(radians(lat2 - lat1) / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(radians(lon2 - lon1) / 2) ** 2
+    return 6371 * 2 * asin(sqrt(a))
+
+
 @router.post("/availability")
 def availability(available: bool, user=Depends(roles("driver")), db=Depends(get_db)):
     qualified(user)
     user.available = available
+    if not available and not user.active_trip_id:
+        db.execute(delete(DriverPosition).where(DriverPosition.driver_id == user.id))
     db.commit()
     return {"available": available}
+
+
+class LocationInput(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    accuracy: float | None = Field(default=None, ge=0, le=100000)
+
+
+@router.post("/location")
+def location(data: LocationInput, user=Depends(roles("driver")), db=Depends(get_db)):
+    qualified(user)
+    limit("driver-location:" + user.id, 30, 60)
+    if not user.available and not user.active_trip_id:
+        raise HTTPException(409, "فعّل التوفر أو ابدأ رحلة لمشاركة موقعك")
+    position = db.get(DriverPosition, user.id)
+    if not position:
+        position = DriverPosition(driver_id=user.id)
+        db.add(position)
+    position.latitude, position.longitude, position.accuracy, position.updated_at = data.latitude, data.longitude, data.accuracy, now()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "تزامن تحديثان للموقع؛ أعد الإرسال") from None
+    return {"ok": True}
+
+
+@router.get("/summary")
+def summary(user=Depends(roles("driver")), db=Depends(get_db)):
+    trips, fees = db.execute(
+        select(func.count(Order.id), func.coalesce(func.sum(Order.delivery_fee), 0)).where(
+            Order.driver_id == user.id, Order.status == "delivered"
+        )
+    ).one()
+    active = db.scalar(select(Order).where(Order.driver_id == user.id, Order.status.in_(ACTIVE_TRIP)))
+    return {
+        "name": user.name,
+        "driver_verified": user.driver_verified,
+        "available": user.available,
+        "active_trip": {"id": active.id, "status": active.status} if active else None,
+        "delivered_trips": trips,
+        "declared_fees": fees,
+        "mode": "test",
+    }
 
 
 @router.get("/offers")
@@ -42,17 +97,27 @@ def offers(user=Depends(roles("driver")), db=Depends(get_db)):
         )
         .limit(30)
     )
-    return [
-        {
-            "id": o.id,
-            "city": db.get(Household, o.household_id).city,
-            "scheduled_at": o.scheduled_at,
-            "fee": o.delivery_fee,
-            "expires_at": o.offer_expires_at,
-            "source": "test",
-        }
-        for o in items
-    ]
+    position = db.get(DriverPosition, user.id)
+    result = []
+    for o in items:
+        h = db.get(Household, o.household_id)
+        distance = None
+        if position and h.pickup_latitude is not None and h.pickup_longitude is not None:
+            distance = round(distance_km(position.latitude, position.longitude, h.pickup_latitude, h.pickup_longitude), 1)
+        result.append(
+            {
+                "id": o.id,
+                "city": h.city,
+                "scheduled_at": o.scheduled_at,
+                "fee": o.delivery_fee,
+                "expires_at": o.offer_expires_at,
+                "distance_km": distance,
+                "source": "test",
+            }
+        )
+    # Nearest pickups first; offers without a known distance keep their expiry order.
+    result.sort(key=lambda x: (x["distance_km"] is None, x["distance_km"] or 0, x["expires_at"]))
+    return result
 
 
 @router.post("/offers/{order_id}/accept")
@@ -114,7 +179,23 @@ def trip(order_id: str, user=Depends(roles("driver")), db=Depends(get_db)):
     if order.driver_id != user.id:
         raise HTTPException(404, "الرحلة غير موجودة")
     h = db.get(Household, order.household_id)
-    return {"id": order.id, "pickup_address": h.pickup_address, "address": order.address, "status": order.status, "fee": order.delivery_fee}
+    return {
+        "id": order.id,
+        "status": order.status,
+        "fee": order.delivery_fee,
+        "scheduled_at": order.scheduled_at,
+        "household_name": h.name,
+        "pickup_address": h.pickup_address,
+        "pickup_latitude": h.pickup_latitude,
+        "pickup_longitude": h.pickup_longitude,
+        "address": order.address,
+        "latitude": order.latitude,
+        "longitude": order.longitude,
+        "items": [
+            {"name": i.name, "quantity": i.quantity, "option_label": i.option_label}
+            for i in db.scalars(select(OrderItem).where(OrderItem.order_id == order.id))
+        ],
+    }
 
 
 @router.post("/trips/{order_id}/transition")
@@ -127,8 +208,6 @@ def trip_transition(order_id: str, state: str, code: str = "", user=Depends(role
     ):
         raise HTTPException(409, "انتقال الرحلة غير مسموح")
     if state in {"picked_up", "delivered"}:
-        from .security import limit
-
         limit("proof:" + order.id, 8, 300)
         expected = order.pickup_code_hash if state == "picked_up" else order.delivery_code_hash
         if not secrets.compare_digest(expected or "", digest(code)):
@@ -136,6 +215,8 @@ def trip_transition(order_id: str, state: str, code: str = "", user=Depends(role
     order.status = state
     if state == "delivered":
         user.active_trip_id = None
+        if not user.available:
+            db.execute(delete(DriverPosition).where(DriverPosition.driver_id == user.id))
     notify(db, order, "تحديث التوصيل: " + state)
     audit(db, user, "delivery." + state, order.id)
     db.commit()

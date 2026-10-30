@@ -119,3 +119,14 @@ class DeliveryRejection(Base):
     __tablename__ = "delivery_rejections"
     order_id = Column(ForeignKey("orders.id"), primary_key=True)
     driver_id = Column(ForeignKey("users.id"), primary_key=True)
+
+
+class DriverPosition(Base):
+    """Only the latest point per driver; removed when the shift ends or the point goes stale."""
+
+    __tablename__ = "driver_positions"
+    driver_id = Column(ForeignKey("users.id"), primary_key=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    accuracy = Column(Float)
+    updated_at = Column(DateTime, nullable=False, default=now)

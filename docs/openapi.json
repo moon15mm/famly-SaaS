@@ -764,6 +764,46 @@
         }
       }
     },
+    "/api/orders/{order_id}/driver-location": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Driver Location",
+        "operationId": "driver_location_api_orders__order_id__driver_location_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/orders/{order_id}/review": {
       "post": {
         "tags": [
@@ -979,6 +1019,64 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/location": {
+      "post": {
+        "tags": [
+          "delivery"
+        ],
+        "summary": "Location",
+        "operationId": "location_api_driver_location_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/summary": {
+      "get": {
+        "tags": [
+          "delivery"
+        ],
+        "summary": "Summary",
+        "operationId": "summary_api_driver_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -3229,6 +3327,25 @@
         }
       }
     },
+    "/api/admin/deliveries/active": {
+      "get": {
+        "tags": [
+          "extended administration"
+        ],
+        "summary": "Active Deliveries",
+        "operationId": "active_deliveries_api_admin_deliveries_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/delivery/waiting": {
       "get": {
         "tags": [
@@ -3604,6 +3721,32 @@
             "minimum": 1.0,
             "title": "Slot Capacity",
             "default": 10
+          },
+          "pickup_latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup Latitude"
+          },
+          "pickup_longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pickup Longitude"
           }
         },
         "type": "object",
@@ -3628,6 +3771,41 @@
           "reason"
         ],
         "title": "IssueInput"
+      },
+      "LocationInput": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          },
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "LocationInput"
       },
       "Login": {
         "properties": {
