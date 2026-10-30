@@ -12,6 +12,7 @@ from .providers import TestDeliveryProvider, require_test_payment
 from .config import settings
 from .scheduling import reserve, release
 from .models_ext import ScheduleSlot
+from .catalog import subscription_lapsed
 
 router = APIRouter(tags=["orders"])
 SAUDI = ZoneInfo("Asia/Riyadh")
@@ -119,7 +120,7 @@ def calculate(db, data):
     if len(households) != 1:
         raise HTTPException(409, "السلة مخصصة لأسرة واحدة؛ أكمل طلبك ثم اطلب من الأسرة الأخرى")
     h = db.get(Household, next(iter(households)))
-    if not h.verified or h.on_vacation or not db.get(User, h.owner_id).active:
+    if not h.verified or h.on_vacation or subscription_lapsed(h) or not db.get(User, h.owner_id).active:
         raise HTTPException(409, "الأسرة غير متاحة لاستقبال الطلبات")
     quantities = quantities_for(data.items)
     if any(p.stock < quantities[p.id] for p in products):

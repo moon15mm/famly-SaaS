@@ -30,6 +30,8 @@ def product_status(product_id: str, data: ProductState, user=Depends(roles("admi
     p = db.get(Product, product_id)
     if not p:
         raise HTTPException(404, "المنتج غير موجود")
+    if p.status == "archived":
+        raise HTTPException(409, "حذفت الأسرة هذا المنتج؛ لا يعاد نشره من الإدارة")
     h = db.get(Household, p.household_id)
     fields = {k: getattr(p, k) for k in ProductInput.model_fields}
     fields["status"] = data.status
@@ -180,3 +182,53 @@ def reassign(order_id: str, data: ReassignInput, user=Depends(roles("admin")), d
     audit(db, user, "delivery.reassign", order.id)
     db.commit()
     return {"ok": True}
+
+
+@router.get("/admin/delivery/waiting")
+def waiting_deliveries(user=Depends(roles("admin")), db=Depends(get_db)):
+    current = now()
+    return [
+        {
+            "order_id": o.id,
+            "household_name": db.get(Household, o.household_id).name,
+            "scheduled_at": o.scheduled_at,
+            "overdue": o.scheduled_at < current,
+        }
+        for o in db.scalars(
+            select(Order)
+            .where(Order.status == "ready", Order.delivery_method == "paid", Order.driver_id.is_(None))
+            .order_by(Order.scheduled_at)
+            .limit(100)
+        )
+    ]
+
+
+# Before a driver holds the order; trips in progress go through reassignment first.
+ADMIN_CANCELLABLE = {"pending_payment", "pending_acceptance", "confirmed", "preparing", "ready"}
+
+
+class CancelInput(BaseModel):
+    note: str = Field(min_length=10, max_length=1000)
+
+
+@router.post("/admin/orders/{order_id}/cancel")
+def cancel_order(order_id: str, data: CancelInput, user=Depends(roles("admin")), db=Depends(get_db)):
+    from .models import SupportTicket
+    from .orders import notify, order_json, restore_stock
+
+    order = db.scalar(select(Order).where(Order.id == order_id).with_for_update())
+    if not order or order.status not in ADMIN_CANCELLABLE:
+        raise HTTPException(409, "لا يمكن إلغاء الطلب في حالته الحالية؛ إن كان مع سائق فأعد إسناده أولًا")
+    old = order.status
+    changed = db.execute(update(Order).where(Order.id == order.id, Order.status == old).values(status="cancelled"))
+    if changed.rowcount != 1:
+        raise HTTPException(409, "تغيرت حالة الطلب؛ أعد المحاولة")
+    restore_stock(db, order)
+    if order.payment_status == "paid":
+        order.payment_status = "refund_pending"
+    notify(db, order, "ألغت الإدارة الطلب")
+    db.add(SupportTicket(user_id=user.id, order_id=order.id, message=data.note, status="resolved"))
+    audit(db, user, "admin.order.cancel", order.id)
+    db.commit()
+    db.refresh(order)
+    return order_json(db, order, user)

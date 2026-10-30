@@ -5,7 +5,7 @@ from uuid import uuid4
 from PIL import Image, UnidentifiedImageError
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Query, Request
 from fastapi.responses import FileResponse
-from sqlalchemy import select, func
+from sqlalchemy import select, func, and_, or_
 from .config import settings
 from .db import get_db
 from .models import Product, Household, Category, Plan, Review, Media, now
@@ -59,6 +59,22 @@ def store_json(store):
     }
 
 
+def subscription_lapsed(h):
+    return h.subscription_status in {"expired", "suspended"} or (
+        h.subscription_status == "trial" and h.trial_ends_at is not None and h.trial_ends_at < now()
+    )
+
+
+def storefront_open():
+    """SQL twin of `verified and not subscription_lapsed(h)`; a lapsed store keeps its data but leaves the market."""
+    status = Household.subscription_status
+    return and_(
+        Household.verified.is_(True),
+        or_(status.is_(None), status.not_in(["expired", "suspended"])),
+        or_(status.is_(None), status != "trial", Household.trial_ends_at.is_(None), Household.trial_ends_at >= now()),
+    )
+
+
 @router.get("/categories")
 def categories(db=Depends(get_db)):
     return [{"id": c.id, "name": c.name, "icon": c.icon} for c in db.scalars(select(Category))]
@@ -73,7 +89,7 @@ def products(
     page: int = Query(1, ge=1),
     db=Depends(get_db),
 ):
-    statement = select(Product, Household).join(Household).where(Product.status == "published", Household.verified.is_(True))
+    statement = select(Product, Household).join(Household).where(Product.status == "published", storefront_open())
     if q:
         escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         statement = statement.where(Product.name.ilike(f"%{escaped}%", escape="\\") | Household.name.ilike(f"%{escaped}%", escape="\\"))
@@ -91,7 +107,7 @@ def products(
 def product(product_id: str, db=Depends(get_db)):
     p = db.get(Product, product_id)
     h = db.get(Household, p.household_id) if p else None
-    if not p or p.status != "published" or not h.verified:
+    if not p or p.status != "published" or not h.verified or subscription_lapsed(h):
         raise HTTPException(404, "المنتج غير متاح")
     result = product_json(p, h)
     result["household"] = store_json(h)
@@ -103,13 +119,13 @@ def product(product_id: str, db=Depends(get_db)):
 
 @router.get("/households")
 def stores(db=Depends(get_db)):
-    return [store_json(h) for h in db.scalars(select(Household).where(Household.verified.is_(True)).limit(50))]
+    return [store_json(h) for h in db.scalars(select(Household).where(storefront_open()).limit(50))]
 
 
 @router.get("/households/{household_id}")
 def store(household_id: str, db=Depends(get_db)):
     h = db.get(Household, household_id)
-    if not h or not h.verified:
+    if not h or not h.verified or subscription_lapsed(h):
         raise HTTPException(404, "الأسرة غير متاحة")
     return store_json(h)
 
@@ -124,6 +140,7 @@ def my_store(user=Depends(roles("seller")), db=Depends(get_db)):
         "trial_ends_at": h.trial_ends_at,
         "plan_id": h.plan_id,
         "telegram_linked": bool(h.telegram_user_id),
+        "storefront_visible": h.verified and not subscription_lapsed(h),
     }
 
 
@@ -142,7 +159,8 @@ def update_store(data: HouseholdInput, user=Depends(roles("seller")), db=Depends
 @router.get("/seller/products")
 def seller_products(user=Depends(roles("seller")), db=Depends(get_db)):
     h = household(db, user)
-    return [product_json(p, h) for p in db.scalars(select(Product).where(Product.household_id == h.id).order_by(Product.created_at.desc()))]
+    statement = select(Product).where(Product.household_id == h.id, Product.status != "archived").order_by(Product.created_at.desc())
+    return [product_json(p, h) for p in db.scalars(statement)]
 
 
 def validate_product(db, h, data):
@@ -152,10 +170,7 @@ def validate_product(db, h, data):
         raise HTTPException(422, "اختر تصنيفًا صحيحًا")
     if data.status == "published" and (not h.verified or not data.images or not h.pickup_address):
         raise HTTPException(422, "النشر يتطلب اعتماد الأسرة وصورة وموقع استلام")
-    if data.status == "published" and (
-        h.subscription_status in {"expired", "suspended"}
-        or (h.subscription_status == "trial" and h.trial_ends_at and h.trial_ends_at < now())
-    ):
+    if data.status == "published" and subscription_lapsed(h):
         raise HTTPException(403, "انتهت صلاحية النشر؛ راجع حالة اشتراك الأسرة")
     for image in data.images:
         if not (Path(settings.media_dir) / image.removeprefix("/media/")).is_file():
@@ -191,7 +206,8 @@ def ensure_product_capacity(db, h):
     db.scalar(select(Household).where(Household.id == h.id).with_for_update())
     plan = db.get(Plan, h.plan_id) if h.plan_id else None
     maximum = plan.product_limit if plan else 20
-    if db.scalar(select(func.count()).select_from(Product).where(Product.household_id == h.id)) >= maximum:
+    # Deleted (archived) products stay for order history but no longer use a plan slot.
+    if db.scalar(select(func.count()).select_from(Product).where(Product.household_id == h.id, Product.status != "archived")) >= maximum:
         raise HTTPException(409, "تم بلوغ حد المنتجات في الباقة")
 
 
@@ -199,7 +215,7 @@ def ensure_product_capacity(db, h):
 def update_product(product_id: str, data: ProductInput, user=Depends(roles("seller")), db=Depends(get_db)):
     h = household(db, user)
     p = db.get(Product, product_id)
-    if not p or p.household_id != h.id:
+    if not p or p.household_id != h.id or p.status == "archived":
         raise HTTPException(404, "المنتج غير موجود")
     validate_product(db, h, data)
     for key, value in data.model_dump().items():
@@ -214,10 +230,11 @@ def update_product(product_id: str, data: ProductInput, user=Depends(roles("sell
 def archive_product(product_id: str, user=Depends(roles("seller")), db=Depends(get_db)):
     h = household(db, user)
     p = db.get(Product, product_id)
-    if not p or p.household_id != h.id:
+    if not p or p.household_id != h.id or p.status == "archived":
         raise HTTPException(404, "المنتج غير موجود")
-    p.status = "paused"
-    audit(db, user, "product.pause", p.id)
+    # Soft delete: order items still reference the product.
+    p.status, p.featured = "archived", False
+    audit(db, user, "product.archive", p.id)
     sync_media(db, h)
     db.commit()
     return {"ok": True}

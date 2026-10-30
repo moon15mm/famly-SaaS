@@ -3229,6 +3229,75 @@
         }
       }
     },
+    "/api/admin/delivery/waiting": {
+      "get": {
+        "tags": [
+          "extended administration"
+        ],
+        "summary": "Waiting Deliveries",
+        "operationId": "waiting_deliveries_api_admin_delivery_waiting_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/orders/{order_id}/cancel": {
+      "post": {
+        "tags": [
+          "extended administration"
+        ],
+        "summary": "Cancel Order",
+        "operationId": "cancel_order_api_admin_orders__order_id__cancel_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/{filename}": {
       "get": {
         "summary": "Media",
@@ -3296,6 +3365,21 @@
           "file"
         ],
         "title": "Body_upload_api_verification_documents_post"
+      },
+      "CancelInput": {
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "note"
+        ],
+        "title": "CancelInput"
       },
       "CartItem": {
         "properties": {

@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from .db import get_db
-from .models import Favorite, Product, Notification, SupportTicket, Plan
+from .models import Favorite, Product, Household, Notification, SupportTicket, Plan
 from .security import current_user, roles, household
-from .catalog import product_json
+from .catalog import product_json, storefront_open
 from .orders import visible_order
 
 router = APIRouter(tags=["account"])
@@ -24,7 +24,12 @@ def profile(data: AddressInput, user=Depends(current_user), db=Depends(get_db)):
 
 @router.get("/favorites")
 def favorites(user=Depends(current_user), db=Depends(get_db)):
-    products = db.scalars(select(Product).join(Favorite).where(Favorite.user_id == user.id, Product.status == "published"))
+    products = db.scalars(
+        select(Product)
+        .join(Favorite)
+        .join(Household, Household.id == Product.household_id)
+        .where(Favorite.user_id == user.id, Product.status == "published", storefront_open())
+    )
     return [product_json(p) for p in products]
 
 

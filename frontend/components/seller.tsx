@@ -33,8 +33,41 @@ function SellerContent() {
     [products, setProducts] = useState<Product[]>([]),
     [store, setStore] = useState<Household | null>(null),
     [editor, setEditor] = useState<Product | null | undefined>(undefined),
+    [deleting, setDeleting] = useState(""),
     [error, setError] = useState("");
   const { toast } = useStore();
+  async function pause(p: Product) {
+    try {
+      await api("/seller/products/" + p.id, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: p.name,
+          description: p.description,
+          category_id: p.category_id,
+          price: p.price,
+          stock: p.stock,
+          prep_hours: p.prep_hours,
+          images: p.images,
+          options: p.options || [],
+          status: "paused",
+        }),
+      });
+      load();
+      toast("تم إيقاف بيع المنتج");
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  }
+  async function remove(p: Product) {
+    try {
+      await api("/seller/products/" + p.id, { method: "DELETE" });
+      setDeleting("");
+      load();
+      toast("حُذف المنتج وتحرر مكانه في الباقة");
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  }
   function load() {
     api<Product[]>("/seller/products")
       .then(setProducts)
@@ -55,6 +88,13 @@ function SellerContent() {
             ? "تمت مراجعة الأسرة"
             : "بانتظار مراجعة واعتماد الإدارة قبل النشر"}
         </p>
+        {store?.verified && store.storefront_visible === false && (
+          <p className="notice" role="alert">
+            متجرك مخفي عن العملاء ولا يستقبل طلبات جديدة لانتهاء الاشتراك أو
+            الفترة التجريبية. الطلبات القائمة تبقى متاحة، ويعود المتجر بعد
+            التجديد من «المبيعات والاشتراك».
+          </p>
+        )}
       </div>
       <div className="dashboard">
         <aside className="dashboard-sidebar">
@@ -79,7 +119,7 @@ function SellerContent() {
               </button>
             );
           })}
-          {store?.verified && (
+          {store?.storefront_visible && (
             <Link href={"/household/" + store.id}>
               <Eye size={17} />
               عرض متجري
@@ -152,22 +192,37 @@ function SellerContent() {
                           >
                             تعديل ومعاينة
                           </button>
-                          <button
-                            className="text-button"
-                            onClick={async () => {
-                              try {
-                                await api("/seller/products/" + p.id, {
-                                  method: "DELETE",
-                                });
-                                load();
-                                toast("تم إيقاف بيع المنتج");
-                              } catch (e) {
-                                toast((e as Error).message);
-                              }
-                            }}
-                          >
-                            إيقاف البيع
-                          </button>
+                          {p.status === "published" && (
+                            <button
+                              className="text-button"
+                              onClick={() => pause(p)}
+                            >
+                              إيقاف البيع
+                            </button>
+                          )}
+                          {deleting === p.id ? (
+                            <>
+                              <button
+                                className="text-button"
+                                onClick={() => remove(p)}
+                              >
+                                تأكيد حذف «{p.name}»
+                              </button>
+                              <button
+                                className="text-button"
+                                onClick={() => setDeleting("")}
+                              >
+                                تراجع
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className="text-button"
+                              onClick={() => setDeleting(p.id)}
+                            >
+                              حذف
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

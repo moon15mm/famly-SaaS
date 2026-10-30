@@ -31,6 +31,7 @@ export interface Household {
   subscription_status?: string;
   telegram_linked?: boolean;
   slot_capacity?: number;
+  storefront_visible?: boolean;
 }
 export interface User {
   id: string;

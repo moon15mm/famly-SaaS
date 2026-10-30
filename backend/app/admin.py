@@ -95,6 +95,8 @@ def pause(product_id: str, user=Depends(roles("admin")), db=Depends(get_db)):
     p = db.get(Product, product_id)
     if not p:
         raise HTTPException(404, "المنتج غير موجود")
+    if p.status == "archived":
+        raise HTTPException(409, "حذفت الأسرة هذا المنتج")
     p.status = "paused"
     audit(db, user, "admin.product.pause", p.id)
     db.commit()

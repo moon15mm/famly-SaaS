@@ -27,6 +27,12 @@ type Issue = {
   reason: string;
   resolved: boolean;
 };
+type Waiting = {
+  order_id: string;
+  household_name: string;
+  scheduled_at: string;
+  overdue: boolean;
+};
 export function AdminOperations({ tab }: { tab: string }) {
   const { toast } = useStore();
   const [products, setProducts] = useState<Product[]>([]),
@@ -34,6 +40,7 @@ export function AdminOperations({ tab }: { tab: string }) {
     [jobs, setJobs] = useState<Job[]>([]),
     [privacy, setPrivacy] = useState<Privacy[]>([]),
     [issues, setIssues] = useState<Issue[]>([]),
+    [waiting, setWaiting] = useState<Waiting[]>([]),
     [plans, setPlans] = useState<(PlanDetails & { active: boolean })[]>([]),
     [editing, setEditing] = useState<Category | null>(null),
     [error, setError] = useState("");
@@ -55,10 +62,14 @@ export function AdminOperations({ tab }: { tab: string }) {
       api<Privacy[]>("/admin/privacy-requests")
         .then(setPrivacy)
         .catch((e) => setError(e.message));
-    if (tab === "issues")
+    if (tab === "issues") {
       api<Issue[]>("/admin/delivery-issues")
         .then(setIssues)
         .catch((e) => setError(e.message));
+      api<Waiting[]>("/admin/delivery/waiting")
+        .then(setWaiting)
+        .catch((e) => setError(e.message));
+    }
     if (tab === "plans")
       api<typeof plans>("/admin/plans")
         .then(setPlans)
@@ -125,32 +136,42 @@ export function AdminOperations({ tab }: { tab: string }) {
                         ? "منشور"
                         : p.status === "draft"
                           ? "مسودة"
-                          : "متوقف"}
+                          : p.status === "archived"
+                            ? "حذفته الأسرة"
+                            : "متوقف"}
                     </td>
                     <td>
-                      <button
-                        className="text-button"
-                        onClick={() =>
-                          act("/admin/products/" + p.id + "/status", {
-                            status:
-                              p.status === "published" ? "paused" : "published",
-                            featured: p.featured,
-                          })
-                        }
-                      >
-                        {p.status === "published" ? "إيقاف" : "نشر بعد التحقق"}
-                      </button>
-                      <button
-                        className="text-button"
-                        onClick={() =>
-                          act("/admin/products/" + p.id + "/status", {
-                            status: p.status,
-                            featured: !p.featured,
-                          })
-                        }
-                      >
-                        {p.featured ? "إلغاء التمييز" : "تمييز في السوق"}
-                      </button>
+                      {p.status !== "archived" && (
+                        <>
+                          <button
+                            className="text-button"
+                            onClick={() =>
+                              act("/admin/products/" + p.id + "/status", {
+                                status:
+                                  p.status === "published"
+                                    ? "paused"
+                                    : "published",
+                                featured: p.featured,
+                              })
+                            }
+                          >
+                            {p.status === "published"
+                              ? "إيقاف"
+                              : "نشر بعد التحقق"}
+                          </button>
+                          <button
+                            className="text-button"
+                            onClick={() =>
+                              act("/admin/products/" + p.id + "/status", {
+                                status: p.status,
+                                featured: !p.featured,
+                              })
+                            }
+                          >
+                            {p.featured ? "إلغاء التمييز" : "تمييز في السوق"}
+                          </button>
+                        </>
+                      )}
                       {p.status === "published" && (
                         <Link className="text-link" href={"/product/" + p.id}>
                           المعاينة
@@ -454,6 +475,30 @@ export function AdminOperations({ tab }: { tab: string }) {
       )}
       {tab === "issues" && (
         <>
+          <h2>طلبات تنتظر سائقًا</h2>
+          <p className="hint">
+            يستمر عرض هذه الطلبات على السائقين. إن تجاوز الطلب موعده دون سائق
+            فافتح تفاصيله لإلغائه مع ذكر السبب، ثم نفّذ الاسترداد.
+          </p>
+          <div className="order-list">
+            {waiting.map((w) => (
+              <article key={w.order_id} className="panel">
+                <h3>
+                  طلب #{w.order_id.slice(0, 8)} · {w.household_name}
+                </h3>
+                <p>الموعد: {date(w.scheduled_at)}</p>
+                <span className="badge">
+                  {w.overdue ? "تجاوز الموعد" : "قبل الموعد"}
+                </span>
+                <Link className="text-link" href={"/orders/" + w.order_id}>
+                  تفاصيل الطلب
+                </Link>
+              </article>
+            ))}
+          </div>
+          {!waiting.length && (
+            <p className="empty">لا طلبات توصيل تنتظر سائقًا.</p>
+          )}
           <h2>تعثر رحلات التوصيل</h2>
           {issues.map((i) => (
             <form

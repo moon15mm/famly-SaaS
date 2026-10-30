@@ -4,7 +4,7 @@ from datetime import timedelta
 import httpx
 from sqlalchemy import select, update, or_
 from .config import settings
-from .models import Order, Outbox, Household, Notification, Session, User, now
+from .models import Order, Outbox, Household, Notification, Session, User, Audit, now
 from .models_ext import Subscription, EmailMessage
 from .orders import restore_stock, notify
 
@@ -34,8 +34,6 @@ def maintenance(db):
             if not plan or not plan.active:
                 continue
             invoice = invoice_for(db, h, plan, item.interval, "renewal-" + item.ends_at.isoformat())
-            from .models import Audit
-
             if not db.scalar(select(Audit).where(Audit.action == "subscription.renewal.notice", Audit.resource_id == invoice.id)):
                 db.add(Audit(action="subscription.renewal.notice", resource_id=invoice.id))
                 db.add(Notification(user_id=h.owner_id, message="فاتورة تجديد اشتراك جاهزة للمراجعة، دون خصم تلقائي"))
@@ -53,6 +51,22 @@ def maintenance(db):
         .where(Order.status == "ready", Order.delivery_method == "paid", Order.driver_id.is_(None), Order.offer_expires_at < now())
         .values(offer_expires_at=now() + timedelta(minutes=15))
     )
+    # Offers keep renewing, so alert once when the requested time passes without a driver.
+    alerted = select(Audit.resource_id).where(Audit.action == "delivery.no_driver.alert")
+    for order in db.scalars(
+        select(Order).where(
+            Order.status == "ready",
+            Order.delivery_method == "paid",
+            Order.driver_id.is_(None),
+            Order.scheduled_at < now(),
+            Order.id.not_in(alerted),
+        )
+    ):
+        db.add(Audit(action="delivery.no_driver.alert", resource_id=order.id))
+        notify(db, order, "لم يقبل أي سائق التوصيل حتى موعده؛ الإدارة تتابع الطلب")
+        alert = "طلب توصيل بلا سائق تجاوز موعده: " + order.id[:8] + " — راجعه من «تعثر التوصيل»"
+        for admin_id in db.scalars(select(User.id).where(User.role == "admin", User.active.is_(True))):
+            db.add(Notification(user_id=admin_id, message=alert))
     from sqlalchemy import delete
 
     db.execute(delete(Session).where(Session.expires_at < now()))

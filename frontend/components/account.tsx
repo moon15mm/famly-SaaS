@@ -296,7 +296,8 @@ export function OrderList({ embedded = false }: { embedded?: boolean }) {
   );
 }
 function OrderDetail({ id }: { id: string }) {
-  const [issueReason, setIssueReason] = useState("");
+  const [issueReason, setIssueReason] = useState(""),
+    [cancelNote, setCancelNote] = useState("");
   const [order, setOrder] = useState<Order | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -654,6 +655,54 @@ function OrderDetail({ id }: { id: string }) {
             هذا طلب تجريبي ولا يثبت دفعًا أو توصيلًا فعليًا. رمز إثبات العملية
             يظهر في إشعارات العميل بعد قبول السائق.
           </p>
+          {user?.role === "admin" &&
+            [
+              "pending_payment",
+              "pending_acceptance",
+              "confirmed",
+              "preparing",
+              "ready",
+            ].includes(order.status) && (
+              <form
+                method="post"
+                className="form-stack"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setBusy(true);
+                  setError("");
+                  try {
+                    await post("/admin/orders/" + id + "/cancel", {
+                      note: cancelNote,
+                    });
+                    setCancelNote("");
+                    load();
+                    toast("أُلغي الطلب، وأُعيد المخزون");
+                  } catch (error) {
+                    setError((error as Error).message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <label>
+                  سبب إلغاء الإدارة
+                  <textarea
+                    value={cancelNote}
+                    onChange={(e) => setCancelNote(e.target.value)}
+                    required
+                    minLength={10}
+                    maxLength={1000}
+                  />
+                </label>
+                <p className="hint">
+                  مثلًا: لم يتوفر سائق حتى الموعد. الطلب المدفوع يصبح بانتظار
+                  الاسترداد.
+                </p>
+                <button className="text-button" disabled={busy}>
+                  إلغاء الطلب من الإدارة
+                </button>
+              </form>
+            )}
           {user?.role === "admin" && (
             <form
               method="post"

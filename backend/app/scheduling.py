@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from .db import get_db
 from .models import Household, Product, now
 from .models_ext import ScheduleSlot
+from .catalog import subscription_lapsed
 
 router = APIRouter(tags=["scheduling"])
 SAUDI = ZoneInfo("Asia/Riyadh")
@@ -44,7 +45,7 @@ def release(db, order):
 @router.get("/households/{household_id}/slots")
 def slots(household_id: str, product_id: str = "", days: int = Query(7, ge=1, le=30), db=Depends(get_db)):
     h = db.get(Household, household_id)
-    if not h or not h.verified or h.on_vacation:
+    if not h or not h.verified or h.on_vacation or subscription_lapsed(h):
         raise HTTPException(404, "الأسرة غير متاحة")
     product = db.get(Product, product_id) if product_id else None
     if product_id and (not product or product.household_id != h.id or product.status != "published"):
