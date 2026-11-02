@@ -78,9 +78,14 @@ function AdminContent() {
   }
   return (
     <div className="container page">
-      <div className="page-title">
-        <span className="overline">إدارة من بيوتنا</span>
-        <h1>صورة أوضح لكل التفاصيل</h1>
+      <div className="page-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <span className="overline">إدارة من بيوتنا</span>
+          <h1 style={{ margin: 0 }}>صورة أوضح لكل التفاصيل</h1>
+        </div>
+        <a href="/ops" style={{ background: "#663440", color: "#ffffff", padding: "10px 18px", borderRadius: "10px", fontSize: "14px", fontWeight: "bold", textDecoration: "none", boxShadow: "0 4px 12px rgba(102, 52, 64, 0.2)" }}>
+          🚨 غرفة العمليات والتدخل العاجل (الدرب)
+        </a>
       </div>
       <div className="stats-grid">
         {[

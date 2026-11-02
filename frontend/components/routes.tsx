@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 const Seller = dynamic(() => import("./seller").then((m) => m.Seller));
 const Driver = dynamic(() => import("./driver").then((m) => m.Driver));
 const Admin = dynamic(() => import("./admin").then((m) => m.Admin));
+const OpsRoom = dynamic(() => import("./ops-room").then((m) => m.OpsRoom));
 import {
   AccountSecurity,
   AddressBook,
@@ -101,6 +102,8 @@ export function RouteView({ path }: { path: string[] }) {
       return <Driver />;
     case "admin":
       return <Admin />;
+    case "ops":
+      return <OpsRoom />;
     case "policies":
       return <Policy slug={path[1]} />;
     default:

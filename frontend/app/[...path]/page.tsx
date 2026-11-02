@@ -27,6 +27,7 @@ export default async function Page({
     "seller",
     "driver",
     "admin",
+    "ops",
   ];
   const resource = [
     "product",
