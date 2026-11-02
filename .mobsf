@@ -1,0 +1,10 @@
+---
+# Reviewed false positives for the mobile apps (see reports/MOBILE_RELEASE_REPORT.md):
+# - android_hidden_ui: View.GONE toggles the progress bar and the offline panel; neither holds secrets.
+# - android_task_hijacking2: the rule cannot see targetSdk (36, set in Gradle); activities also set taskAffinity="".
+ignore-rules:
+  - android_hidden_ui
+  - android_task_hijacking2
+severity-filter:
+  - WARNING
+  - ERROR

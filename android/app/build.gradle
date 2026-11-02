@@ -4,22 +4,44 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
-// The hosted demo by default; pass -PplatformUrl=http://localhost:3000 for the USB development build.
+// The hosted platform by default; pass -PplatformUrl=http://localhost:3000 for the USB development build.
 def platformUrl = providers.gradleProperty('platformUrl').getOrElse('https://buyutna.wardat.xyz')
 if (!(platformUrl ==~ /https?:\/\/[A-Za-z0-9.\-\[\]:]+\/?/)) {
     throw new GradleException('platformUrl must be an HTTP(S) origin without credentials, path, query or fragment')
 }
 
+// Release signing comes from the environment or ~/.gradle/gradle.properties, never from the repository.
+// MINBUYUTNA_KEYSTORE (path), MINBUYUTNA_KEYSTORE_PASSWORD, MINBUYUTNA_KEY_ALIAS, MINBUYUTNA_KEY_PASSWORD.
+def secret = { String name -> providers.gradleProperty(name).orElse(providers.environmentVariable(name)).getOrNull() }
+def keystorePath = secret('MINBUYUTNA_KEYSTORE')
+def releaseSigning = keystorePath != null && file(keystorePath).exists()
+
+// CI passes -PversionCode=<run number> so every upload to the stores is higher than the last.
+def appVersionCode = providers.gradleProperty('versionCode').map { it as Integer }.getOrElse(5)
+
 android {
     namespace 'sa.minbuyutna.app'
-    compileSdk 35
+    compileSdk 36
     defaultConfig {
         applicationId 'sa.minbuyutna.app'
         minSdk 26
-        targetSdk 35
-        versionCode 4
-        versionName '0.4.0'
+        targetSdk 36
+        versionCode appVersionCode
+        versionName '1.0.0'
         buildConfigField 'String', 'PLATFORM_URL', '"' + platformUrl + '"'
+    }
+    signingConfigs {
+        if (releaseSigning) {
+            release {
+                storeFile file(keystorePath)
+                storePassword secret('MINBUYUTNA_KEYSTORE_PASSWORD')
+                keyAlias secret('MINBUYUTNA_KEY_ALIAS')
+                keyPassword secret('MINBUYUTNA_KEY_PASSWORD')
+                enableV1Signing false
+                enableV2Signing true
+                enableV3Signing true
+            }
+        }
     }
     buildFeatures {
         buildConfig true
@@ -29,15 +51,33 @@ android {
         debug {
             applicationIdSuffix '.local'
             signingConfig signingConfigs.debug
+            // The USB/local build may point at another host from «رابط المنصة».
+            buildConfigField 'boolean', 'CUSTOM_ORIGIN', 'true'
         }
-        release { minifyEnabled false }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Store builds are locked to the platform they were built for: no user-supplied server.
+            buildConfigField 'boolean', 'CUSTOM_ORIGIN', 'false'
+            if (releaseSigning) signingConfig signingConfigs.release
+            ndk { debugSymbolLevel 'none' }
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = '17' }
-    lint { abortOnError true }
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
+    }
+    dependenciesInfo {
+        // Keeps the dependency metadata block out of the APK; Play still receives it inside the AAB.
+        includeInApk = false
+        includeInBundle = true
+    }
 }
 
 tasks.matching { it.name == 'preReleaseBuild' }.configureEach {

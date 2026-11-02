@@ -13,8 +13,14 @@ import javax.crypto.spec.GCMParameterSpec
 
 /** The platform origin chosen in the app, shared with the web screens. */
 object Platform {
+    @JvmStatic
     fun origin(context: Context): String {
-        val saved = context.getSharedPreferences("platform", Context.MODE_PRIVATE).getString("origin", null)
+        // Store builds ignore any saved host: they only ever talk to the platform they were built for.
+        val saved = if (BuildConfig.CUSTOM_ORIGIN) {
+            context.getSharedPreferences("platform", Context.MODE_PRIVATE).getString("origin", null)
+        } else {
+            null
+        }
         return try {
             EndpointPolicy.normalize(saved ?: BuildConfig.PLATFORM_URL, BuildConfig.DEBUG)
         } catch (error: IllegalArgumentException) {

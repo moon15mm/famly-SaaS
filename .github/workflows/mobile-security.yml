@@ -1,0 +1,31 @@
+name: Mobile security scan
+on:
+  push:
+    paths: ['android/**', 'ios/**', '.github/workflows/mobile-security.yml']
+  pull_request:
+    paths: ['android/**', 'ios/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install mobsfscan==0.4.5 semgrep==1.86.0 'setuptools<81' detect-secrets==1.5.0
+      # OWASP MASVS static rules for Java/Kotlin/Swift and the Android manifest. Fails on ERROR findings.
+      - name: mobsfscan
+        run: |
+          # Full report (INFO included) for the release file, then the gate on WARNING/ERROR minus reviewed false positives.
+          mobsfscan android ios --json -o mobsfscan.json || true
+          mobsfscan --config .mobsf android ios
+      - name: Secrets in mobile sources
+        run: |
+          detect-secrets scan android ios store --exclude-files '\.(ttf|png|jar)$' > secrets.json
+          python -c "import json,sys; r=json.load(open('secrets.json'))['results']; print(json.dumps(r, indent=1)); sys.exit(1 if r else 0)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: mobile-security, path: 'mobsfscan.json'}

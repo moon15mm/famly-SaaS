@@ -86,11 +86,7 @@ public class MainActivity extends Activity {
             getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         }
         preferences = getSharedPreferences("platform", MODE_PRIVATE);
-        try {
-            origin = EndpointPolicy.normalize(preferences.getString("origin", BuildConfig.PLATFORM_URL), BuildConfig.DEBUG);
-        } catch (IllegalArgumentException error) {
-            origin = EndpointPolicy.normalize(BuildConfig.PLATFORM_URL, BuildConfig.DEBUG);
-        }
+        origin = Platform.origin(this);
         // Drivers work in the native screens; the website stays for customers, families and admins.
         boolean stayWeb = getIntent().getBooleanExtra(DriverActivity.EXTRA_STAY_WEB, false);
         if (!stayWeb && DriverLaunch.hasSession(this)) {
@@ -176,7 +172,7 @@ public class MainActivity extends Activity {
         menu.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(this, menu);
             popup.getMenu().add("دخول السائقين").setOnMenuItemClickListener(item -> { startActivity(new Intent(this, DriverActivity.class)); return true; });
-            popup.getMenu().add("رابط المنصة").setOnMenuItemClickListener(item -> { showConnection(); return true; });
+            if (BuildConfig.CUSTOM_ORIGIN) popup.getMenu().add("رابط المنصة").setOnMenuItemClickListener(item -> { showConnection(); return true; });
             popup.getMenu().add("طباعة الصفحة أو حفظ PDF").setOnMenuItemClickListener(item -> { printPage(); return true; });
             popup.show();
         });
@@ -212,7 +208,7 @@ public class MainActivity extends Activity {
         explanation.setPadding(0, dp(20), 0, dp(20));
         offline.addView(explanation);
         offline.addView(button("إعادة المحاولة", () -> web.loadUrl(origin + "/")));
-        offline.addView(button("رابط المنصة", this::showConnection));
+        if (BuildConfig.CUSTOM_ORIGIN) offline.addView(button("رابط المنصة", this::showConnection));
         offline.setVisibility(View.GONE);
         content.addView(offline, new FrameLayout.LayoutParams(-1, -1));
         root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -222,11 +218,13 @@ public class MainActivity extends Activity {
 
     private void refreshLabel() {
         boolean local = origin.startsWith("http:");
+        connectionLabel.setVisibility(BuildConfig.CUSTOM_ORIGIN ? View.VISIBLE : View.GONE);
         connectionLabel.setText(local
                 ? "نسخة محلية تجريبية • تتطلب اتصال USB بالكمبيوتر" : "متصل بمنصتك • " + Uri.parse(origin).getHost());
         explanation.setText(local
                 ? "في النسخة المحلية: شغّل المنصة على الكمبيوتر، ووصل الهاتف عبر USB ثم شغّل سكريبت ربط أندرويد.\n\nللاتصال بالمنصة المستضافة أدخل رابطها الآمن من «رابط المنصة»."
-                : "تحقق من اتصال الهاتف بالإنترنت ثم أعد المحاولة. الحسابات والطلبات تحتاج اتصالًا بالخادم.\n\nلتغيير الخادم استخدم «رابط المنصة».");
+                : "تحقق من اتصال الهاتف بالإنترنت ثم أعد المحاولة. الحسابات والطلبات تحتاج اتصالًا بالخادم."
+                        + (BuildConfig.CUSTOM_ORIGIN ? "\n\nلتغيير الخادم استخدم «رابط المنصة»." : ""));
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -315,6 +313,7 @@ public class MainActivity extends Activity {
     private void showOffline() { progress.setVisibility(View.GONE); offline.setVisibility(View.VISIBLE); }
 
     private void showConnection() {
+        if (!BuildConfig.CUSTOM_ORIGIN) return;
         EditText field = new EditText(this);
         field.setText(origin);
         field.setSingleLine(true);

@@ -1,6 +1,6 @@
 plugins {
-    id 'com.android.application' version '8.6.1' apply false
-    // Kotlin 2.0.21 is the newest line tested with AGP 8.6 and Gradle 8.7 used here.
-    id 'org.jetbrains.kotlin.android' version '2.0.21' apply false
-    id 'org.jetbrains.kotlin.plugin.compose' version '2.0.21' apply false
+    // AGP 8.10 is the first line with full API 36 support; Google Play requires targetSdk 36 since 31 Aug 2026.
+    id 'com.android.application' version '8.10.1' apply false
+    id 'org.jetbrains.kotlin.android' version '2.1.21' apply false
+    id 'org.jetbrains.kotlin.plugin.compose' version '2.1.21' apply false
 }

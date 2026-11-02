@@ -1,0 +1,55 @@
+# Generate the Xcode project with XcodeGen:  brew install xcodegen && xcodegen generate
+name: MinBuyutna
+options:
+  bundleIdPrefix: sa.minbuyutna
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: ar
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+targets:
+  MinBuyutna:
+    type: application
+    platform: iOS
+    sources:
+      - path: MinBuyutna
+    settings:
+      base:
+        PRODUCT_NAME: MinBuyutna
+        PRODUCT_BUNDLE_IDENTIFIER: sa.minbuyutna.app
+        INFOPLIST_FILE: MinBuyutna/Resources/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        # The hosted platform; store builds talk to this origin only.
+        PLATFORM_URL: https://buyutna.wardat.xyz
+        APP_DISPLAY_NAME: من بيوتنا
+        SWIFT_STRICT_CONCURRENCY: minimal
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: sa.minbuyutna.app.local
+          APP_DISPLAY_NAME: من بيوتنا — تجريبي
+    scheme:
+      testTargets:
+        - MinBuyutnaTests
+      gatherCoverageData: true
+  MinBuyutnaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MinBuyutnaTests
+    dependencies:
+      - target: MinBuyutna
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: sa.minbuyutna.app.tests
+        CODE_SIGN_STYLE: Automatic
