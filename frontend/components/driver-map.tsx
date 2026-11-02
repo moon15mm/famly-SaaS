@@ -82,7 +82,7 @@ export function DriverMap({ orderId }: { orderId: string }) {
     import("leaflet").then((L) => {
       if (cancelled || !container.current || map.current) return;
       leaflet.current = L;
-      const m = L.map(container.current).setView([24.7136, 46.6753], 12);
+      const m = L.map(container.current).setView([17.7336, 42.2658], 13);
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution:

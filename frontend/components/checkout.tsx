@@ -308,7 +308,7 @@ export function Checkout() {
                 maxLength={1000}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="المدينة، الحي، الشارع، المبنى والعلامة المميزة"
+                placeholder="الدرب، الحي (مثل: العزيزية، الشاطئ، القائم)، الشارع أو العلامة المميزة"
               />
             </label>
           )}

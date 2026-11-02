@@ -23,8 +23,8 @@ export function MapPicker({
     import("leaflet").then((L) => {
       if (cancelled || !container.current) return;
       const m = L.map(container.current).setView(
-        [value.latitude ?? 24.7136, value.longitude ?? 46.6753],
-        12,
+        [value.latitude ?? 17.7336, value.longitude ?? 42.2658],
+        13,
       );
       map.current = m;
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
