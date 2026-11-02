@@ -43,7 +43,16 @@
 
 من قائمة «المزيد ← رابط المنصة» يمكن تحديد أي رابط HTTPS لاستضافة أخرى للمنصة، أو بناء APK برابطها عبر `-PlatformUrl`. تغيير الرابط يمسح جلسة التطبيق وبيانات موقعه المحليّة. الحسابات لا تنتقل بين استضافتين دون نقل بياناتهما.
 
-نسخة debug تسمح بـHTTP على localhost و127.0.0.1 فقط. نسخة release تمنع HTTP وتتطلب `-PplatformUrl=https://your-real-host`؛ لا يُنشأ إصدار تجاري موقّع أو يُرفع إلى Google Play ضمن هذا التسليم. لا يوجد مفتاح توقيع تجاري بعد، لذا يُوزَّع APK بنسخة debug.
+نسخة debug تسمح بـHTTP على localhost و127.0.0.1 فقط. نسخة release تمنع HTTP، ومقفلة على رابط المنصة الذي بُنيت به (`-PplatformUrl`، والافتراضي https://buyutna.wardat.xyz)؛ خيار «رابط المنصة» لا يظهر فيها.
+
+## إصدار المتجر (منذ 1.0.0)
+
+- targetSdk وcompileSdk 36 كما يشترط Google Play منذ 31 أغسطس 2026، مع AGP 8.10.1 وGradle 8.11.1 وKotlin 2.1.21.
+- R8 لتصغير الكود وحذف الموارد غير المستخدمة، وملف mapping.txt لقراءة الأعطال في Play Console.
+- التوقيع من متغيرات البيئة أو `~/.gradle/gradle.properties` فقط، ولا يدخل المفتاح المستودع.
+- مسار GitHub Actions «Android app» يشغّل الاختبارات وlint ويبني `app-release.aab` الموقّع للرفع إلى Play.
+
+خطوات المفتاح وأسرار GitHub وصفحة Play Console في `docs/MOBILE_RELEASE.md`.
 
 ## وظائف التطبيق
 
