@@ -40,7 +40,7 @@ async def validation_error(request, error):
 async def security_headers(request: Request, call_next):
     started = time.monotonic()
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
-        webhook = request.url.path in {"/api/payments/webhook/test", "/api/telegram/webhook"}
+        webhook = request.url.path in {"/api/payments/webhook/test", "/api/payments/webhook/tap", "/api/telegram/webhook"}
         origin = request.headers.get("origin")
         if not webhook and (
             (origin and origin != settings.public_origin) or (request.cookies.get("session") and origin != settings.public_origin)

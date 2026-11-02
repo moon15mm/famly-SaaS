@@ -219,16 +219,31 @@ export function SubscriptionPanel() {
                   <button
                     disabled={busy}
                     className="button"
-                    onClick={() => pay(i.id, "paid")}
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        const res = await post<{ checkout_url?: string }>(
+                          "/payments/tap/subscription/" + i.id,
+                        );
+                        if (res?.checkout_url) {
+                          window.location.href = res.checkout_url;
+                          return;
+                        }
+                      } catch (e) {
+                        toast((e as Error).message);
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
                   >
-                    محاكاة دفع {money(i.amount)} ر.س
+                    دفع الاشتراك عبر Tap (مدى / Apple Pay) · {money(i.amount)} ر.س
                   </button>
                   <button
                     disabled={busy}
                     className="text-button"
-                    onClick={() => pay(i.id, "failed")}
+                    onClick={() => pay(i.id, "paid")}
                   >
-                    اختبار فشل الدفع
+                    محاكاة دفع تجريبية
                   </button>
                 </>
               )}

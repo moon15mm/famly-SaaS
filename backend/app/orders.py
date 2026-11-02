@@ -8,7 +8,7 @@ from .db import get_db
 from .models import Order, OrderItem, Product, Household, Notification, Review, User, now
 from .schemas import Checkout, ReviewInput
 from .security import current_user, roles, household, audit, digest
-from .providers import TestDeliveryProvider, require_test_payment
+from .providers import TestDeliveryProvider, require_payment_enabled
 from .config import settings
 from .scheduling import reserve, release
 from .models_ext import ScheduleSlot, DriverPosition
@@ -197,7 +197,7 @@ def quote(data: Checkout, user=Depends(roles("customer")), db=Depends(get_db)):
 
 @router.post("/orders", status_code=201)
 def checkout(data: Checkout, user=Depends(roles("customer")), db=Depends(get_db)):
-    require_test_payment()
+    require_payment_enabled()
     if settings.require_email_verification and not user.email_verified:
         raise HTTPException(403, "أكد بريدك الإلكتروني قبل إنشاء الطلب")
     fingerprint = digest(json.dumps(data.model_dump(mode="json", exclude={"idempotency_key", "quoted_total"}), sort_keys=True))

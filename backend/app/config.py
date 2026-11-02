@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     media_dir: str = "./data/media"
     private_dir: str = "./data/private"
     private_link_secret: str = ""
+    tap_secret_key: str = ""
+    tap_public_key: str = ""
+    tap_webhook_secret: str = ""
     mail_transport: str = "disabled"
     smtp_host: str = ""
     smtp_port: int = 587
@@ -33,8 +36,10 @@ class Settings(BaseSettings):
                 raise RuntimeError("Production requires PostgreSQL")
             if not self.cookie_secure or not self.public_origin.startswith("https://"):
                 raise RuntimeError("Production requires HTTPS and secure cookies")
-            if self.payment_provider != "disabled":
-                raise RuntimeError("Live marketplace payment connector has not been approved")
+            if self.payment_provider not in ("disabled", "tap"):
+                raise RuntimeError("Live marketplace payment connector must be tap or disabled")
+            if self.payment_provider == "tap" and not self.tap_secret_key:
+                raise RuntimeError("Tap payment requires TAP_SECRET_KEY")
             if self.ai_provider == "test":
                 raise RuntimeError("Test AI is forbidden in production")
             if self.mail_transport == "local":

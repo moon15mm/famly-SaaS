@@ -433,18 +433,29 @@ function OrderDetail({ id }: { id: string }) {
                   <button
                     className="button"
                     disabled={busy}
-                    onClick={() => action("/payments/test/" + id)}
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        const res = await post<{ checkout_url?: string }>("/payments/tap/create/" + id);
+                        if (res?.checkout_url) {
+                          window.location.href = res.checkout_url;
+                          return;
+                        }
+                      } catch (e) {
+                        toast((e as Error).message);
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
                   >
-                    محاكاة نجاح الدفع · {money(order.total)} ر.س
+                    الدفع الإلكتروني (مدى / Apple Pay / فيزا) · {money(order.total)} ر.س
                   </button>
                   <button
                     className="text-button"
                     disabled={busy}
-                    onClick={() =>
-                      action("/payments/test/" + id + "?outcome=failed")
-                    }
+                    onClick={() => action("/payments/test/" + id)}
                   >
-                    اختبار فشل الدفع
+                    محاكاة دفع تجريبية (بدون خصم)
                   </button>
                 </>
               )}

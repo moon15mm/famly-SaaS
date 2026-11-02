@@ -7,7 +7,7 @@ from .db import get_db
 from .models import Household, Plan, Notification, now
 from .models_ext import Subscription, Invoice
 from .security import roles, household, audit
-from .providers import require_test_payment
+from .providers import require_test_payment, require_payment_enabled
 
 router = APIRouter(tags=["subscriptions"])
 
@@ -91,7 +91,7 @@ def get_invoice(invoice_id: str, user=Depends(roles("seller", "admin")), db=Depe
 
 @router.post("/seller/subscription/invoices", status_code=201)
 def create_invoice(data: SubscribeInput, user=Depends(roles("seller")), db=Depends(get_db)):
-    require_test_payment()
+    require_payment_enabled()
     h = household(db, user)
     plan = db.get(Plan, data.plan_id)
     if not plan:
@@ -100,6 +100,23 @@ def create_invoice(data: SubscribeInput, user=Depends(roles("seller")), db=Depen
     audit(db, user, "subscription.invoice.create", invoice.id)
     db.commit()
     return invoice_json(invoice)
+
+
+def activate_invoice_paid(db, invoice, user):
+    h = db.scalar(select(Household).where(Household.id == invoice.household_id).with_for_update())
+    current = db.get(Subscription, h.id)
+    start = max(now(), current.ends_at) if current and current.ends_at else now()
+    end = add_months(start, 12 if invoice.interval == "annual" else 1)
+    if not current:
+        current = Subscription(household_id=h.id, plan_id=invoice.plan_id, interval=invoice.interval)
+        db.add(current)
+    current.plan_id, current.interval, current.status, current.ends_at = invoice.plan_id, invoice.interval, "active", end
+    h.plan_id, h.subscription_status, h.trial_ends_at = invoice.plan_id, "active", None
+    invoice.status = "paid"
+    invoice.paid_at, invoice.period_start, invoice.period_end = now(), start, end
+    db.add(Notification(user_id=user.id, message="تم تفعيل اشتراكك حتى " + end.strftime("%Y-%m-%d")))
+    audit(db, user, "subscription.payment.paid", invoice.id)
+    db.commit()
 
 
 @router.post("/seller/subscription/invoices/{invoice_id}/test-pay")
@@ -113,27 +130,13 @@ def pay(invoice_id: str, outcome: Literal["paid", "failed"] = "paid", user=Depen
         return {**invoice_json(invoice), "duplicate": True}
     if invoice.status not in {"unpaid", "failed"}:
         raise HTTPException(409, "الفاتورة لا تقبل الدفع")
-    old = invoice.status
-    changed = db.execute(update(Invoice).where(Invoice.id == invoice.id, Invoice.status == old).values(status=outcome))
-    if changed.rowcount != 1:
-        raise HTTPException(409, "تمت معالجة الفاتورة بالفعل")
     if outcome == "paid":
-        # Serialize renewals for this household, including different invoices.
-        db.scalar(select(Household).where(Household.id == h.id).with_for_update())
-        current = db.get(Subscription, h.id)
-        start = max(now(), current.ends_at) if current and current.ends_at else now()
-        end = add_months(start, 12 if invoice.interval == "annual" else 1)
-        if not current:
-            current = Subscription(household_id=h.id, plan_id=invoice.plan_id, interval=invoice.interval)
-            db.add(current)
-        current.plan_id, current.interval, current.status, current.ends_at = invoice.plan_id, invoice.interval, "active", end
-        h.plan_id, h.subscription_status, h.trial_ends_at = invoice.plan_id, "active", None
-        invoice.paid_at, invoice.period_start, invoice.period_end = now(), start, end
-        db.add(Notification(user_id=user.id, message="تم تفعيل اشتراكك تجريبيًا حتى " + end.strftime("%Y-%m-%d")))
+        activate_invoice_paid(db, invoice, user)
     else:
+        invoice.status = "failed"
         db.add(Notification(user_id=user.id, message="فشلت محاكاة دفع الاشتراك؛ لم تمدد الفترة"))
-    audit(db, user, "subscription.payment." + outcome, invoice.id)
-    db.commit()
+        audit(db, user, "subscription.payment.failed", invoice.id)
+        db.commit()
     return invoice_json(invoice)
 
 

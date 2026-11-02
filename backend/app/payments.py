@@ -5,12 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
+from starlette.responses import RedirectResponse
 from .config import settings
 from .db import get_db
-from .models import Order, PaymentEvent, Ledger, now
+from .models import Order, PaymentEvent, Ledger, now, Household, User, Plan
+from .models_ext import Invoice
 from .orders import visible_order, restore_stock, notify
-from .security import roles, audit
-from .providers import require_test_payment
+from .security import roles, audit, household
+from .providers import require_test_payment, TapPaymentProvider
+from .subscriptions import activate_invoice_paid
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -116,3 +119,97 @@ def refund(order_id: str, amount: int, event_id: str, user=Depends(roles("admin"
     audit(db, user, "payment.refund.test", order.id)
     db.commit()
     return {"ok": True, "refunded": total_refunded}
+
+
+@router.post("/tap/create/{order_id}")
+def create_tap_order(order_id: str, user=Depends(roles("customer")), db=Depends(get_db)):
+    if settings.payment_provider != "tap":
+        raise HTTPException(400, "مزود الدفع Tap غير مفعّل حالياً")
+    order = visible_order(db, order_id, user)
+    if order.customer_id != user.id:
+        raise HTTPException(404, "الطلب غير موجود")
+    if order.payment_status != "unpaid" or order.status != "pending_payment" or order.payment_expires_at < now():
+        raise HTTPException(409, "الطلب لا يقبل الدفع حالياً")
+    provider = TapPaymentProvider()
+    return provider.create_order_charge(order, user)
+
+
+@router.post("/tap/subscription/{invoice_id}")
+def create_tap_subscription(invoice_id: str, user=Depends(roles("seller")), db=Depends(get_db)):
+    if settings.payment_provider != "tap":
+        raise HTTPException(400, "مزود الدفع Tap غير مفعّل حالياً")
+    h = household(db, user)
+    invoice = db.scalar(select(Invoice).where(Invoice.id == invoice_id))
+    if not invoice or invoice.household_id != h.id:
+        raise HTTPException(404, "الفاتورة غير موجودة")
+    if invoice.status != "unpaid":
+        raise HTTPException(409, "الفاتورة لا تقبل الدفع")
+    provider = TapPaymentProvider()
+    return provider.create_invoice_charge(invoice, user)
+
+
+@router.get("/tap/redirect")
+def tap_redirect(tap_id: str = "", order_id: str = "", invoice_id: str = "", db=Depends(get_db)):
+    if not tap_id:
+        return RedirectResponse(url=f"{settings.public_origin}/account?payment_error=missing_tap_id")
+    provider = TapPaymentProvider()
+    charge = provider.get_charge(tap_id)
+    status = charge.get("status")
+
+    target_order_id = order_id or charge.get("metadata", {}).get("order_id") or charge.get("reference", {}).get("order")
+    target_invoice_id = invoice_id or charge.get("metadata", {}).get("invoice_id")
+
+    if target_order_id:
+        if status == "CAPTURED":
+            amount_halalas = int(round(float(charge.get("amount", 0)) * 100))
+            try:
+                process_event(db, EventInput(event_id=tap_id, order_id=target_order_id, amount=amount_halalas, outcome="paid"))
+            except HTTPException:
+                pass
+            return RedirectResponse(url=f"{settings.public_origin}/orders/{target_order_id}?paid=1")
+        return RedirectResponse(url=f"{settings.public_origin}/orders/{target_order_id}?payment_failed=1")
+
+    if target_invoice_id:
+        invoice = db.scalar(select(Invoice).where(Invoice.id == target_invoice_id).with_for_update())
+        if invoice and status == "CAPTURED":
+            if invoice.status != "paid":
+                h = db.get(Household, invoice.household_id)
+                h_user = db.get(User, h.owner_id) if h else None
+                activate_invoice_paid(db, invoice, h_user or User(id="system", role="seller"))
+            return RedirectResponse(url=f"{settings.public_origin}/seller/subscription?paid=1")
+        return RedirectResponse(url=f"{settings.public_origin}/seller/subscription?payment_failed=1")
+
+    return RedirectResponse(url=f"{settings.public_origin}/account")
+
+
+@router.post("/webhook/tap")
+async def tap_webhook(request: Request, db=Depends(get_db)):
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "بيانات غير صالحة")
+    tap_id = body.get("id")
+    if not tap_id or not tap_id.startswith("chg_"):
+        return {"status": "ignored"}
+
+    provider = TapPaymentProvider()
+    charge = provider.get_charge(tap_id)
+    status = charge.get("status")
+    target_order_id = charge.get("metadata", {}).get("order_id") or charge.get("reference", {}).get("order")
+    target_invoice_id = charge.get("metadata", {}).get("invoice_id")
+
+    if target_order_id and status == "CAPTURED":
+        amount_halalas = int(round(float(charge.get("amount", 0)) * 100))
+        try:
+            process_event(db, EventInput(event_id=tap_id, order_id=target_order_id, amount=amount_halalas, outcome="paid"))
+        except HTTPException:
+            pass
+
+    elif target_invoice_id and status == "CAPTURED":
+        invoice = db.scalar(select(Invoice).where(Invoice.id == target_invoice_id).with_for_update())
+        if invoice and invoice.status != "paid":
+            h = db.get(Household, invoice.household_id)
+            h_user = db.get(User, h.owner_id) if h else None
+            activate_invoice_paid(db, invoice, h_user or User(id="system", role="seller"))
+
+    return {"status": "ok"}
