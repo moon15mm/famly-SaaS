@@ -107,7 +107,8 @@ private struct Primary: ButtonStyle {
             .font(Theme.font(.body, bold: true))
             .frame(maxWidth: .infinity, minHeight: 46)
             .foregroundColor(.white)
-            .background((enabled ? Theme.plum : Color.gray).opacity(configuration.isPressed ? 0.8 : 1), in: RoundedRectangle(cornerRadius: 12))
+            .background(RoundedRectangle(cornerRadius: 12).fill(enabled ? Theme.plum : Color.gray))
+            .opacity(configuration.isPressed ? 0.8 : 1)
     }
 }
 
@@ -119,7 +120,7 @@ private struct Secondary: ButtonStyle {
             .padding(.horizontal, 14)
             .frame(minHeight: 42)
             .foregroundColor(enabled ? Theme.plum : .gray)
-            .background(RoundedRectangle(cornerRadius: 12).stroke(enabled ? Theme.plum : Color.gray, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(enabled ? Theme.plum : Color.gray, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
@@ -232,7 +233,7 @@ struct HomeScreen: View {
 
     var body: some View {
         Page {
-            Text("أهلًا " + model.driverName).font(Theme.font(.title2, bold: true))
+            Text("أهلًا \(model.driverName)").font(Theme.font(.title2, bold: true))
             if let summary = model.summary {
                 if !summary.verified {
                     Card(title: "حسابك بانتظار الاعتماد") {
@@ -260,7 +261,7 @@ struct HomeScreen: View {
                 if !summary.complete {
                     Card(title: "متطلبات العمل") {
                         Text("قبل بدء الدوام يلزم إكمال:")
-                        ForEach(summary.missing, id: \.self) { Text("• " + $0) }
+                        ForEach(summary.missing, id: \.self) { Text("• \($0)") }
                         Button("إكمال العقد والمستندات") { model.open(.more) }.buttonStyle(Primary())
                     }
                 }
@@ -306,9 +307,9 @@ struct OffersScreen: View {
             } else {
                 Page {
                     ForEach(model.offers) { offer in
-                        Card(title: Driving.money(offer.fee) + " • " + offer.city) {
+                        Card(title: "\(Driving.money(offer.fee)) • \(offer.city)") {
                             if let distance = Driving.distance(offer.distanceKm) { Text("يبعد \(distance) عن موقع الاستلام") }
-                            Text("موعد التسليم " + Driving.localTime(offer.scheduledAt))
+                            Text("موعد التسليم \(Driving.localTime(offer.scheduledAt))")
                             if let minutes = Driving.minutesLeft(offer.expiresAt, now: Date()) { Note("ينتهي العرض خلال \(max(0, minutes)) دقيقة") }
                             Note("تفاصيل الأسرة والعميل تظهر بعد القبول.")
                             HStack(spacing: 8) {
@@ -336,18 +337,18 @@ struct TripScreen: View {
             let step = Driving.nextStep(trip.status)
             Page {
                 TripSteps(status: trip.status)
-                Card(title: "الاستلام من " + trip.householdName) {
+                Card(title: "الاستلام من \(trip.householdName)") {
                     Text(trip.pickupAddress)
                     if trip.pickupLatitude == nil { Note("لم تحدد الأسرة نقطة على الخريطة؛ الاتجاهات حسب العنوان.") }
                     Button("الاتجاهات إلى الأسرة") { navigate(trip.pickupLatitude, trip.pickupLongitude, trip.pickupAddress) }.buttonStyle(Primary())
                 }
                 Card(title: "الطلب") {
                     ForEach(trip.items, id: \.self) { item in
-                        Text("• " + item.name + (item.option.isEmpty ? "" : " (" + item.option + ")") + " × \(item.quantity)")
+                        Text(Self.itemLine(item))
                     }
                     Divider()
-                    Text("أجرة المشوار " + Driving.money(trip.fee)).font(Theme.font(.body, bold: true))
-                    Text("موعد التسليم " + Driving.localTime(trip.scheduledAt))
+                    Text("أجرة المشوار \(Driving.money(trip.fee))").font(Theme.font(.body, bold: true))
+                    Text("موعد التسليم \(Driving.localTime(trip.scheduledAt))")
                 }
                 Card(title: "التسليم للعميل") {
                     Text(trip.address)
@@ -396,6 +397,11 @@ struct TripScreen: View {
         }
     }
 
+    private static func itemLine(_ item: TripItem) -> String {
+        let option = item.option.isEmpty ? "" : " (\(item.option))"
+        return "• \(item.name)\(option) × \(item.quantity)"
+    }
+
     private func navigate(_ latitude: Double?, _ longitude: Double?, _ address: String) {
         if let url = Driving.mapsURL(latitude: latitude, longitude: longitude, address: address) { UIApplication.shared.open(url) }
     }
@@ -433,7 +439,7 @@ struct HistoryScreen: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(past.household).font(Theme.font(.body, bold: true))
-                                Note(Driving.localTime(past.scheduledAt) + " • " + Driving.status(past.status))
+                                Note("\(Driving.localTime(past.scheduledAt)) • \(Driving.status(past.status))")
                             }
                             Spacer()
                             Text(Driving.money(past.fee)).font(Theme.font(.body, bold: true)).foregroundColor(Theme.plum)
@@ -456,7 +462,7 @@ struct MoreScreen: View {
         Page {
             Card(title: "الحساب") {
                 Text(model.driverName).font(Theme.font(.body, bold: true))
-                Note("المنصة: " + Platform.host(model.origin))
+                Note("المنصة: \(Platform.host(model.origin))")
                 Button("تسجيل الخروج") { model.logout() }.buttonStyle(Secondary()).disabled(model.busy)
             }
             if let compliance = model.compliance {
@@ -498,11 +504,11 @@ private struct ContractCard: View {
     var body: some View {
         if contract.accepted {
             Card(title: "العقد") {
-                Text("وُقّع «" + contract.title + "» — الإصدار \(contract.version)")
-                if !contract.acceptedAt.isEmpty { Note("بتاريخ " + Driving.localTime(contract.acceptedAt)) }
+                Text("وُقّع «\(contract.title)» — الإصدار \(contract.version)")
+                if !contract.acceptedAt.isEmpty { Note("بتاريخ \(Driving.localTime(contract.acceptedAt))") }
             }
         } else {
-            Card(title: contract.title + " — الإصدار \(contract.version)") {
+            Card(title: "\(contract.title) — الإصدار \(contract.version)") {
                 Text(contract.body).font(Theme.font(.subheadline))
                 Divider()
                 TextField("الاسم الكامل كما في الهوية", text: $name)
@@ -530,9 +536,9 @@ private struct RequirementRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(requirement.title + (requirement.required ? "" : " (اختياري)")).font(Theme.font(.body, bold: true))
-            Note(Driving.documentState(requirement.state) + (requirement.expiresOn.isEmpty ? "" : " • ينتهي " + requirement.expiresOn))
-            if !requirement.note.isEmpty { Note("ملاحظة المراجعة: " + requirement.note) }
+            Text(titleLine).font(Theme.font(.body, bold: true))
+            Note(stateLine)
+            if !requirement.note.isEmpty { Note("ملاحظة المراجعة: \(requirement.note)") }
             if Driving.needsUpload(requirement.state) || requirement.state == "expiring" {
                 let label = requirement.state == "missing" ? "رفع المستند" : "رفع نسخة جديدة"
                 if requirement.needsExpiry {
@@ -562,6 +568,13 @@ private struct RequirementRow: View {
                 send(item, expiresOn: Driving.isoDate(expiry))
             }
         }
+    }
+
+    private var titleLine: String { requirement.required ? requirement.title : "\(requirement.title) (اختياري)" }
+
+    private var stateLine: String {
+        let state = Driving.documentState(requirement.state)
+        return requirement.expiresOn.isEmpty ? state : "\(state) • ينتهي \(requirement.expiresOn)"
     }
 
     private func send(_ item: PhotosPickerItem?, expiresOn: String?) {

@@ -22,7 +22,7 @@ struct WebRootView: View {
         VStack(spacing: 0) {
             toolbar
             if Platform.customOrigin {
-                Text(web.origin.hasPrefix("http:") ? "نسخة محلية تجريبية" : "متصل بمنصتك • " + Platform.host(web.origin))
+                Text(connectionLabel)
                     .font(Theme.font(.caption))
                     .foregroundColor(Theme.plum)
                     .padding(.bottom, 4)
@@ -90,6 +90,10 @@ struct WebRootView: View {
         .padding(28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.paper)
+    }
+
+    private var connectionLabel: String {
+        web.origin.hasPrefix("http:") ? "نسخة محلية تجريبية" : "متصل بمنصتك • \(Platform.host(web.origin))"
     }
 
     private func showOrigin() {

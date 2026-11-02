@@ -2,12 +2,12 @@ import SwiftUI
 import UIKit
 
 enum Theme {
-    static let plum = Color(red: 0x67 / 255, green: 0x37 / 255, blue: 0x46 / 255)
-    static let paper = Color(red: 0xFA / 255, green: 0xF8 / 255, blue: 0xF5 / 255)
-    static let leaf = Color(red: 0x2E / 255, green: 0x6B / 255, blue: 0x4F / 255)
-    static let mist = Color(red: 0xF1 / 255, green: 0xEC / 255, blue: 0xE7 / 255)
-    static let plumUI = UIColor(red: 0x67 / 255, green: 0x37 / 255, blue: 0x46 / 255, alpha: 1)
-    static let paperUI = UIColor(red: 0xFA / 255, green: 0xF8 / 255, blue: 0xF5 / 255, alpha: 1)
+    static let plum = Color(red: 0.4039, green: 0.2157, blue: 0.2745)
+    static let paper = Color(red: 0.9804, green: 0.9725, blue: 0.9608)
+    static let leaf = Color(red: 0.1804, green: 0.4196, blue: 0.3098)
+    static let mist = Color(red: 0.9451, green: 0.9255, blue: 0.9059)
+    static let plumUI = UIColor(red: 0.4039, green: 0.2157, blue: 0.2745, alpha: 1)
+    static let paperUI = UIColor(red: 0.9804, green: 0.9725, blue: 0.9608, alpha: 1)
 
     static func font(_ style: Font.TextStyle, bold: Bool = false) -> Font {
         let size: CGFloat

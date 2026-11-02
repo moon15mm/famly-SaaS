@@ -11,7 +11,7 @@ final class ShiftManager: NSObject, ObservableObject {
     @Published private(set) var running = false
     @Published private(set) var authorization: CLAuthorizationStatus
 
-    private let manager = CLLocationManager()
+    private let manager: CLLocationManager
     private var poller: Task<Void, Never>?
     private var latest: CLLocation?
     private var sentAt = Date.distantPast
@@ -20,6 +20,8 @@ final class ShiftManager: NSObject, ObservableObject {
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
     private override init() {
+        let manager = CLLocationManager()
+        self.manager = manager
         authorization = manager.authorizationStatus
         super.init()
         manager.delegate = self
@@ -37,9 +39,11 @@ final class ShiftManager: NSObject, ObservableObject {
     func requestPermissions() async -> Bool {
         _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
         if authorization == .notDetermined {
-            await withCheckedContinuation { continuation in
-                waiters.append(continuation)
-                manager.requestWhenInUseAuthorization()
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                Task { @MainActor in
+                    self.waiters.append(continuation)
+                    self.manager.requestWhenInUseAuthorization()
+                }
             }
         }
         return hasLocation
