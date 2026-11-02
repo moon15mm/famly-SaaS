@@ -8,7 +8,7 @@ final class EndpointPolicyTests: XCTestCase {
     }
 
     func testRejectsAmbiguousOrUnsafeEndpoints() {
-        for value in ["http://example.test", "https://user:secret@example.test", "https://example.test/path",
+        for value in ["http://example.test", "https://user:secret@example.test", "https://example.test/path", // pragma: allowlist secret
                       "https://example.test?token=a", "https://example.test#x", "file:///data/private", "javascript:alert(1)",
                       "http://localhost.evil.test:3000", "http://192.168.1.2:3000", "https://example.test:65536",
                       "https://example.test:0"] {
