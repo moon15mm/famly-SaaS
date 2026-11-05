@@ -27,12 +27,16 @@ x-backend: &backend
     AI_PROVIDER: disabled
     MEDIA_DIR: /app/data/media
     PRIVATE_DIR: /app/data/private
+    # WhatsApp gateway on this server (darbstu-evolution); the key lives only in deploy/server/.env.
+    EVOLUTION_API_URL: http://darbstu-evolution:8080
+    EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
+    WHATSAPP_INSTANCE: buyutna
     # Only nginx on this host reaches the loopback port, and it overwrites X-Forwarded-For.
     FORWARDED_ALLOW_IPS: '*'
   volumes:
     - media:/app/data/media
     - private:/app/data/private
-  networks: [internal, edge]
+  networks: [internal, edge, evolution_net]
   security_opt: [no-new-privileges:true]
   cap_drop: [ALL]
   mem_limit: 512m
@@ -115,3 +119,6 @@ networks:
   internal:
     internal: true
   edge:
+  evolution_net:
+    external: true
+    name: darbstu-evolution_evo_net

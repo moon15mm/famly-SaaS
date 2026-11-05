@@ -36,15 +36,16 @@ def overview(db=Depends(get_db)):
     def count(model):
         return db.scalar(select(func.count()).select_from(model))
 
+    paid = Order.payment_status.in_(["paid", "partial_refund", "refunded", "refund_pending"])
     return {
         "users": count(User),
         "households": count(Household),
         "products": count(Product),
         "orders": count(Order),
-        "gross_sales": db.scalar(
-            select(func.coalesce(func.sum(Order.total), 0)).where(
-                Order.payment_status.in_(["paid", "partial_refund", "refunded", "refund_pending"])
-            )
+        "gross_sales": db.scalar(select(func.coalesce(func.sum(Order.total), 0)).where(paid)),
+        # The platform's real income on paid orders: service fee, family commission and delivery margin.
+        "net_commission": db.scalar(
+            select(func.coalesce(func.sum(Order.service_fee + Order.merchant_fee + Order.delivery_margin), 0)).where(paid)
         ),
     }
 

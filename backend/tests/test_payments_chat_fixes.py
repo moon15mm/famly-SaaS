@@ -280,6 +280,8 @@ def test_fee_split_is_stored_and_shown_to_the_right_people(setup, checkout_data)
     assert kinds == {"product_sales", "merchant_commission"}
     report = c["admin"].get("/api/admin/reports").json()
     assert (report["service_fees"], report["delivery_margins"], report["merchant_commissions"]) == (150, 250, 340)
+    # The admin dashboard shows the platform's real income, not an assumed percentage.
+    assert c["admin"].get("/api/admin/overview").json()["net_commission"] == 150 + 250 + 340
 
 
 def completed_pickup(c, data, key):

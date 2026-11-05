@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = ""
     telegram_bot_username: str = ""
+    # WhatsApp gateway (Evolution API on the same server); the key only ever comes from the environment.
+    evolution_api_url: str = "http://darbstu-evolution:8080"
+    evolution_api_key: str = ""
+    whatsapp_instance: str = "buyutna"
     ai_provider: str = "disabled"
     ai_api_key: str = ""
     ai_model: str = ""

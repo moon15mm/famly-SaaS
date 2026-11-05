@@ -71,12 +71,17 @@ function OpsRoomContent() {
     }
   }
 
-  function openWhatsApp(phonePromptMsg: string, defaultText: string) {
+  async function openWhatsApp(phonePromptMsg: string, defaultText: string) {
     const p = prompt(phonePromptMsg || "أدخل رقم جوال المستلم في الدرب (مثال: 9665XXXXXXXX):");
     if (p) {
-      const clean = p.replace(/[^0-9]/g, "");
-      const url = `https://wa.me/${clean}?text=${encodeURIComponent(defaultText)}`;
-      window.open(url, "_blank");
+      try {
+        await post("/admin/whatsapp/send", { phone: p, message: defaultText });
+        toast("تم إرسال التنبيه بنجاح عبر واتساب المنصة الرسمي! ✓");
+      } catch {
+        const clean = p.replace(/[^0-9]/g, "");
+        const url = `https://wa.me/${clean}?text=${encodeURIComponent(defaultText)}`;
+        window.open(url, "_blank");
+      }
     }
   }
 
@@ -139,6 +144,27 @@ function OpsRoomContent() {
             />
             <span>السيرفر متصل وحي</span>
           </div>
+
+          <Link
+            href="/admin"
+            style={{
+              background: "#f0fdf4",
+              border: "1px solid #22c55e",
+              color: "#15803d",
+              padding: "6px 14px",
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 800,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              textDecoration: "none",
+              boxShadow: "0 2px 6px rgba(34, 197, 94, 0.15)",
+            }}
+          >
+            <span>💬</span>
+            <span>بوابة واتساب المنصة (مسح الباركود)</span>
+          </Link>
 
           <button
             onClick={loadData}
@@ -504,6 +530,26 @@ function OpsRoomContent() {
 
             <div style={{ padding: 20 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                  onClick={() => {
+                    const id = prompt("أدخل رقم الطلب لفتح غرفة المحادثة الذكية المباشرة والتنسيق بين الأطراف:");
+                    if (id) window.open(`/orders/${id.trim()}`, "_blank");
+                  }}
+                  style={{
+                    background: "#fdf8f0",
+                    border: "1px solid #b88e58",
+                    color: "#854d0e",
+                    padding: "12px 16px",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    textAlign: "right",
+                  }}
+                >
+                  🤖💬 فتح غرفة محادثة الطلب الذكية (الأسرة والعميل والكابتن)
+                </button>
+
                 <button
                   onClick={async () => {
                     const id = prompt("رقم الطلب الكامل (من رابط صفحة الطلب) لسحبه من الكابتن الحالي:")?.trim();
