@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select, func, update, or_
+from .config import settings
 from .db import get_db
 from .models import Product, Household, Order, Outbox, now
 from .models_ext import DataRequest, Invoice, DeliveryIssue
@@ -64,18 +65,25 @@ def financial_report(db, household_id=None):
             entry["product_sales"] += order.subtotal
             entry["delivery_charges"] += order.delivery_fee
             entry["refunds"] += order.refunded
+    paid_orders = [o for o in orders if o.payment_status in paid]
     return {
         "period_days": 90,
         "timezone": "Asia/Riyadh",
         "orders": len(orders),
-        "paid_orders": sum(o.payment_status in paid for o in orders),
-        "product_sales": sum(o.subtotal for o in orders if o.payment_status in paid),
-        "delivery_charges": sum(o.delivery_fee for o in orders if o.payment_status in paid),
+        "paid_orders": len(paid_orders),
+        "product_sales": sum(o.subtotal for o in paid_orders),
+        "delivery_charges": sum(o.delivery_fee for o in paid_orders),
+        # Platform income per paid order: customer service fee, family commission and delivery margin.
+        "service_fees": sum(o.service_fee for o in paid_orders),
+        "merchant_commissions": sum(o.merchant_fee for o in paid_orders),
+        "delivery_margins": sum(o.delivery_margin for o in paid_orders),
+        "family_payouts": sum(o.subtotal - o.merchant_fee for o in paid_orders),
+        "driver_payouts": sum(o.delivery_fee - o.delivery_margin for o in paid_orders),
         "refunds": sum(o.refunded for o in orders),
         "settled": None,
         "provider_fees": None,
         "net_profit": None,
-        "mode": "test",
+        "mode": settings.payment_provider,
         "daily": sorted(days.values(), key=lambda d: d["day"]),
     }
 

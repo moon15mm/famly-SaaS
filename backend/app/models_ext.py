@@ -175,3 +175,37 @@ class DriverPosition(Base):
     longitude = Column(Float, nullable=False)
     accuracy = Column(Float)
     updated_at = Column(DateTime, nullable=False, default=now)
+
+
+class OrderChatMessage(Base):
+    __tablename__ = "order_chat_messages"
+    id = Column(String(32), primary_key=True, default=uid)
+    order_id = Column(ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, index=True)
+    sender_id = Column(ForeignKey("users.id"))
+    sender_role = Column(String(20), nullable=False)  # 'ai', 'system', 'customer', 'seller', 'driver', 'admin'
+    sender_name = Column(String(100), nullable=False)
+    message_type = Column(String(30), nullable=False, default="text")  # 'text', 'status_update', 'image', 'review_prompt', 'review_submitted'
+    content = Column(Text, nullable=False)
+    image_url = Column(String(255))
+    metadata_json = Column(Text)
+    created_at = Column(DateTime, nullable=False, default=now)
+
+
+class TapCharge(Base):
+    """Every Tap charge the platform opens, so no captured payment can go unnoticed.
+
+    status: initiated → applied | failed | needs_refund → refunded | resolved
+    """
+
+    __tablename__ = "tap_charges"
+    id = Column(String(80), primary_key=True)
+    kind = Column(String(12), nullable=False)
+    target_id = Column(String(32), nullable=False, index=True)
+    amount = Column(Integer, nullable=False)
+    currency = Column(String(3), nullable=False, default="SAR")
+    status = Column(String(20), nullable=False, default="initiated", index=True)
+    detail = Column(String(500), nullable=False, default="")
+    refund_id = Column(String(80))
+    created_at = Column(DateTime, nullable=False, default=now)
+    updated_at = Column(DateTime, nullable=False, default=now)
+

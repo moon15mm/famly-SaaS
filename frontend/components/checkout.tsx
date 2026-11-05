@@ -132,10 +132,18 @@ export function Checkout() {
     [address, setAddress] = useState(""),
     [scheduled, setScheduled] = useState(""),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false),
-    [quote, setQuote] = useState<{
+    [busy, setBusy] = useState(false);
+  const firstItem = cart[0]?.product as (typeof cart[0]['product'] & { pickup_enabled?: boolean });
+  const pickupAllowed = firstItem ? (firstItem.pickup_enabled ?? firstItem.household?.pickup_enabled ?? true) : true;
+  useEffect(() => {
+    if (!pickupAllowed && method === "pickup") {
+      setMethod("paid");
+    }
+  }, [pickupAllowed, method]);
+  const [quote, setQuote] = useState<{
       subtotal: number;
       delivery_fee: number;
+      service_fee?: number;
       total: number;
       quote?: { breakdown: string };
       items: {
@@ -272,31 +280,40 @@ export function Checkout() {
           <fieldset className="delivery-options">
             <legend className="sr-only">طريقة التسليم</legend>
             {[
-              ["pickup", "استلام من الأسرة", "بدون رسوم توصيل"],
+              [
+                "pickup",
+                "استلام من الأسرة",
+                pickupAllowed ? "بدون رسوم توصيل" : "الأسرة لا تتيح الاستلام من المنزل (التوصيل فقط)",
+              ],
               ["free", "توصيل تقدمه الأسرة", "حسب توفر الخدمة لدى الأسرة"],
               [
                 "paid",
                 "توصيل مع سائق — تجريبي",
                 "الرسوم والمسافة للاختبار فقط",
               ],
-            ].map(([v, t, d]) => (
-              <label
-                className={method === v ? "choice selected" : "choice"}
-                key={v}
-              >
-                <input
-                  type="radio"
-                  name="delivery_method"
-                  value={v}
-                  checked={method === v}
-                  onChange={() => setMethod(v)}
-                />
-                <span>
-                  <strong>{t}</strong>
-                  <small>{d}</small>
-                </span>
-              </label>
-            ))}
+            ].map(([v, t, d]) => {
+              const disabled = v === "pickup" && !pickupAllowed;
+              return (
+                <label
+                  className={`${method === v ? "choice selected" : "choice"} ${disabled ? "disabled" : ""}`}
+                  style={disabled ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+                  key={v}
+                >
+                  <input
+                    type="radio"
+                    name="delivery_method"
+                    value={v}
+                    disabled={disabled}
+                    checked={method === v}
+                    onChange={() => !disabled && setMethod(v)}
+                  />
+                  <span>
+                    <strong>{t}</strong>
+                    <small>{d}</small>
+                  </span>
+                </label>
+              );
+            })}
           </fieldset>
           {method !== "pickup" && (
             <label>
@@ -393,6 +410,10 @@ export function Checkout() {
                 <span>التوصيل</span>
                 <strong>{money(quote.delivery_fee)} ر.س</strong>
               </div>
+              <div>
+                <span>رسوم الخدمة والتشغيل</span>
+                <strong>{money(quote.service_fee || 150)} ر.س</strong>
+              </div>
               <div className="total">
                 <strong>الإجمالي</strong>
                 <strong>{money(quote.total)} ر.س</strong>
@@ -405,7 +426,7 @@ export function Checkout() {
             </p>
           )}
           <p className="notice">
-            وضع تجريبي. لا يتم تحصيل أموال أو إرسال طلب إلى أسرة حقيقية.
+            لن يتم طلب الدفع الآن. ستراجع الأسرة توفر الطلب أولاً، وسيتاح لك الدفع الإلكتروني فور قبولها.
           </p>
           {error && (
             <p className="error" role="alert">
@@ -416,7 +437,7 @@ export function Checkout() {
             {busy
               ? "لحظات…"
               : quote
-                ? `إنشاء الطلب التجريبي · ${money(quote.total)} ر.س`
+                ? `إرسال الطلب للأسرة للموافقة · ${money(quote.total)} ر.س`
                 : "مراجعة السعر والتوفر"}
             <ArrowLeft size={17} />
           </button>

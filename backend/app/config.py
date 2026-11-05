@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     payment_webhook_secret: str = ""
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = ""
+    telegram_bot_username: str = ""
     ai_provider: str = "disabled"
     ai_api_key: str = ""
     ai_model: str = ""

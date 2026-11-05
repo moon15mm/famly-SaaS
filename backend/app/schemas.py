@@ -73,6 +73,7 @@ class HouseholdInput(BaseModel):
     pickup_address: str = Field(min_length=8, max_length=1000)
     free_delivery: bool = False
     delivery_enabled: bool = True
+    pickup_enabled: bool = True
     opening_hour: int = Field(ge=0, le=22, default=9)
     closing_hour: int = Field(ge=1, le=23, default=21)
     on_vacation: bool = False

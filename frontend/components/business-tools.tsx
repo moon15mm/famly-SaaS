@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api, post, money, date, Order } from "@/lib/api";
 import { useStore } from "./provider";
+import { PaymentResult, usePaymentProvider } from "./payment-mode";
 export type PlanDetails = {
   id: string;
   name: string;
@@ -40,6 +41,7 @@ export function SubscriptionPanel() {
     [busy, setBusy] = useState(false);
   const key = useRef("");
   const { toast } = useStore();
+  const provider = usePaymentProvider();
   function load() {
     api<PlanDetails[]>("/plans")
       .then((p) => {
@@ -68,7 +70,7 @@ export function SubscriptionPanel() {
         idempotency_key: key.current,
       });
       load();
-      toast("فاتورة التجربة جاهزة للمراجعة");
+      toast("الفاتورة جاهزة للدفع");
     } catch (e) {
       toast((e as Error).message);
     } finally {
@@ -153,7 +155,7 @@ export function SubscriptionPanel() {
           </label>
         </fieldset>
         <button className="button" disabled={busy || !planId}>
-          إنشاء فاتورة اشتراك تجريبية
+          {provider === "tap" ? "إصدار فاتورة الاشتراك" : "إنشاء فاتورة اشتراك تجريبية"}
         </button>
       </form>
       {subscription?.status === "active" && (
@@ -185,9 +187,11 @@ export function SubscriptionPanel() {
           إصدار فاتورة تجديد وإشعاري قبل انتهاء الاشتراك
         </label>
       )}
+      <PaymentResult subject="subscription" />
       <p className="notice">
-        الفواتير والمدفوعات هنا محاكاة محلية وليست فواتير ضريبية أو تحصيلًا
-        فعليًا. التجديد لا يخصم أموالًا تلقائيًا.
+        {provider === "tap"
+          ? "الدفع هنا عبر بوابة Tap ويُخصم فعليًا. الإيصالات داخلية وليست فواتير ضريبية. التجديد يصدر فاتورة ولا يخصم تلقائيًا."
+          : "الفواتير والمدفوعات هنا محاكاة محلية وليست فواتير ضريبية أو تحصيلًا فعليًا. التجديد لا يخصم أموالًا تلقائيًا."}
       </p>
       <div className="order-list">
         {subscription?.invoices.map((i) => (
@@ -203,7 +207,9 @@ export function SubscriptionPanel() {
               </div>
               <span className="badge">
                 {i.status === "paid"
-                  ? "مدفوعة تجريبيًا"
+                  ? i.provider === "tap"
+                    ? "مدفوعة عبر Tap"
+                    : "مدفوعة تجريبيًا"
                   : i.status === "failed"
                     ? "تعذر الدفع"
                     : "غير مدفوعة"}
@@ -216,6 +222,7 @@ export function SubscriptionPanel() {
               </Link>
               {i.status !== "paid" && (
                 <>
+                  {provider === "tap" && (
                   <button
                     disabled={busy}
                     className="button"
@@ -238,13 +245,16 @@ export function SubscriptionPanel() {
                   >
                     دفع الاشتراك عبر Tap (مدى / Apple Pay) · {money(i.amount)} ر.س
                   </button>
-                  <button
-                    disabled={busy}
-                    className="text-button"
-                    onClick={() => pay(i.id, "paid")}
-                  >
-                    محاكاة دفع تجريبية
-                  </button>
+                  )}
+                  {provider === "test" && (
+                    <button
+                      disabled={busy}
+                      className="text-button"
+                      onClick={() => pay(i.id, "paid")}
+                    >
+                      محاكاة دفع تجريبية
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -544,6 +554,8 @@ export function ReceiptPage({
   const [order, setOrder] = useState<Order | null>(null),
     [invoice, setInvoice] = useState<Invoice | null>(null),
     [error, setError] = useState("");
+  const provider = usePaymentProvider();
+  const real = provider === "tap";
   useEffect(() => {
     if (subscription)
       api<Invoice>("/subscription/invoices/" + id)
@@ -557,7 +569,10 @@ export function ReceiptPage({
   return (
     <div className="container page narrow">
       <div className="panel printable">
-        <h1>{subscription ? "إيصال اشتراك تجريبي" : "إيصال طلب تجريبي"}</h1>
+        <h1>
+          {subscription ? "إيصال اشتراك" : "إيصال طلب"}
+          {real ? "" : " تجريبي"}
+        </h1>
         <p>من بيوتنا · #{id.slice(0, 10)}</p>
         {error && (
           <p role="alert" className="error">
@@ -588,7 +603,11 @@ export function ReceiptPage({
             <h2>{money(invoice.amount)} ر.س</h2>
             <p>
               الحالة:{" "}
-              {invoice.status === "paid" ? "مدفوع تجريبيًا" : "غير مدفوع"}
+              {invoice.status === "paid"
+                ? invoice.provider === "tap"
+                  ? "مدفوع عبر Tap"
+                  : "مدفوع تجريبيًا"
+                : "غير مدفوع"}
             </p>
             {invoice.period_end && (
               <p>نهاية الفترة: {date(invoice.period_end)}</p>
@@ -596,8 +615,9 @@ export function ReceiptPage({
           </>
         )}
         <p className="notice">
-          هذا إيصال داخلي تجريبي، وليس فاتورة ضريبية معتمدة أو إثبات تحصيل
-          أموال. لا يطبق حساب ضريبة افتراضيًا.
+          {real
+            ? "هذا إيصال داخلي لدفعة عبر بوابة Tap، وليس فاتورة ضريبية معتمدة. لا يطبق حساب ضريبة."
+            : "هذا إيصال داخلي تجريبي، وليس فاتورة ضريبية معتمدة أو إثبات تحصيل أموال. لا يطبق حساب ضريبة افتراضيًا."}
         </p>
         <button className="button no-print" onClick={() => window.print()}>
           طباعة الإيصال أو حفظه

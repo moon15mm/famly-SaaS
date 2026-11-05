@@ -18,6 +18,9 @@ import { useStore } from "./provider";
 import { AccountSecurity } from "./account-tools";
 import { ProductGrid } from "./products";
 import { DriverMap } from "./driver-map";
+import { PickupMap } from "./pickup-map";
+import { OrderChat } from "./order-chat";
+import { PaymentResult, usePaymentProvider } from "./payment-mode";
 export function Gate({
   role,
   children,
@@ -99,6 +102,7 @@ function AccountContent() {
         <span className="overline">مساحتك في من بيوتنا</span>
         <h1>حيّاك يا {user?.name}</h1>
       </div>
+      <PaymentResult subject="order" />
       <div className="dashboard">
         <aside className="dashboard-sidebar">
           <h2>حسابي</h2>
@@ -304,6 +308,7 @@ function OrderDetail({ id }: { id: string }) {
     [busy, setBusy] = useState(false),
     [proof, setProof] = useState("");
   const { user, toast } = useStore();
+  const provider = usePaymentProvider();
   function load() {
     api<Order>("/orders/" + id)
       .then(setOrder)
@@ -363,7 +368,7 @@ function OrderDetail({ id }: { id: string }) {
     customer = user?.role === "customer",
     driver = user?.role === "driver";
   const nextSeller: Record<string, string> = {
-    pending_acceptance: "confirmed",
+    pending_acceptance: "pending_payment",
     confirmed: "preparing",
     preparing: "ready",
     ...(order.delivery_method === "pickup"
@@ -371,6 +376,12 @@ function OrderDetail({ id }: { id: string }) {
       : order.delivery_method === "free"
         ? { ready: "in_transit", in_transit: "delivered" }
         : {}),
+  };
+  const sellerActionLabels: Record<string, string> = {
+    pending_acceptance: "✓ قبول الطلب وتأكيد التوفر (طلب الدفع من العميل)",
+    confirmed: "🍳 بدء تجهيز الطلب في المطبخ",
+    preparing: "✨ تم الانتهاء — الطلب جاهز للاستلام / التسليم",
+    ready: order.delivery_method === "pickup" ? "✓ تم تسليم الطلب للعميل يد بيد" : "بدء التوصيل",
   };
   const nextDriver: Record<string, string> = {
     assigned: "picked_up",
@@ -397,6 +408,7 @@ function OrderDetail({ id }: { id: string }) {
       <div className="order-progress">
         {[
           "pending_acceptance",
+          "pending_payment",
           "confirmed",
           "preparing",
           "ready",
@@ -407,6 +419,49 @@ function OrderDetail({ id }: { id: string }) {
           </span>
         ))}
       </div>
+      <PaymentResult subject="order" />
+      {customer && order.status === "pending_acceptance" && (
+        <div className="notice" style={{ background: "#fef9c3", borderColor: "#facc15", color: "#854d0e", padding: "14px", borderRadius: "8px", margin: "1rem 0" }}>
+          <strong>⏳ تم إرسال طلبك للأسرة لمراجعته وتأكيد التوفر</strong>
+          <p style={{ margin: "4px 0 0 0", fontSize: "0.95rem" }}>
+            الأسرة تراجع طلبك حالياً للتأكد من توفر المكونات وإمكانية التجهيز في الموعد المحدد. سيتاح لك زر الدفع فور قبول الأسرة للطلب.
+          </p>
+        </div>
+      )}
+      {customer && order.status === "pending_payment" && (
+        <div className="notice" style={{ background: "#ecfdf5", borderColor: "#10b981", color: "#065f46", padding: "14px", borderRadius: "8px", margin: "1rem 0" }}>
+          <strong>🎉 وافقت الأسرة على طلبك!</strong>
+          <p style={{ margin: "4px 0 0 0", fontSize: "0.95rem" }}>
+            يرجى إتمام الدفع الآن ليبدأ المطبخ في تحضير وتجهيز طلبك فوراً.
+          </p>
+        </div>
+      )}
+      {customer && (order.status === "confirmed" || order.status === "preparing") && (
+        <div className="notice" style={{ background: "#eff6ff", borderColor: "#3b82f6", color: "#1e40af", padding: "14px", borderRadius: "8px", margin: "1rem 0" }}>
+          <strong>🍳 بدأ المطبخ في تحضير وتجهيز وجبتك!</strong>
+          <p style={{ margin: "4px 0 0 0", fontSize: "0.95rem" }}>
+            تم استلام الدفع بنجاح، والأسرة تقوم بالطهي والتجهيز حالياً.
+          </p>
+        </div>
+      )}
+      {customer && order.status === "ready" && (
+        <div className="notice" style={{ background: "#f0fdf4", borderColor: "#22c55e", color: "#15803d", padding: "14px", borderRadius: "8px", margin: "1rem 0" }}>
+          <strong>✨ وجبتك جاهزة للاستلام!</strong>
+          <p style={{ margin: "4px 0 0 0", fontSize: "0.95rem" }}>
+            {order.delivery_method === "pickup"
+              ? "تفضل بزيارة منزل الأسرة الموضح في الخريطة أدناه لاستلام طلبك."
+              : "طلبك جاهز وسيقوم السائق بالتسليم قريباً."}
+          </p>
+        </div>
+      )}
+      {seller && order.status === "pending_payment" && (
+        <div className="notice" style={{ background: "#fef9c3", borderColor: "#facc15", color: "#854d0e", padding: "14px", borderRadius: "8px", margin: "1rem 0" }}>
+          <strong>⏳ تم قبول الطلب وبانتظار سداد العميل</strong>
+          <p style={{ margin: "4px 0 0 0", fontSize: "0.95rem" }}>
+            تم إشعار العميل بقبولك للطلب. بمجرد إتمام العميل للدفع ({money(order.total)} ر.س)، ستتحول الحالة فوراً لتبدأ بالتجهيز والطهي.
+          </p>
+        </div>
+      )}
       {error && (
         <p className="error" role="alert">
           {error}
@@ -430,6 +485,7 @@ function OrderDetail({ id }: { id: string }) {
             <div className="order-actions">
               {customer && order.status === "pending_payment" && (
                 <>
+                  {provider === "tap" && (
                   <button
                     className="button"
                     disabled={busy}
@@ -450,13 +506,16 @@ function OrderDetail({ id }: { id: string }) {
                   >
                     الدفع الإلكتروني (مدى / Apple Pay / فيزا) · {money(order.total)} ر.س
                   </button>
-                  <button
-                    className="text-button"
-                    disabled={busy}
-                    onClick={() => action("/payments/test/" + id)}
-                  >
-                    محاكاة دفع تجريبية (بدون خصم)
-                  </button>
+                  )}
+                  {provider === "test" && (
+                    <button
+                      className="text-button"
+                      disabled={busy}
+                      onClick={() => action("/payments/test/" + id)}
+                    >
+                      محاكاة دفع تجريبية (بدون خصم)
+                    </button>
+                  )}
                 </>
               )}
               {seller && nextSeller[order.status] && (
@@ -472,7 +531,7 @@ function OrderDetail({ id }: { id: string }) {
                     )
                   }
                 >
-                  تحديث: {status[nextSeller[order.status]]}
+                  {sellerActionLabels[order.status] || ("تحديث: " + status[nextSeller[order.status]])}
                 </button>
               )}
               {((customer &&
@@ -480,7 +539,7 @@ function OrderDetail({ id }: { id: string }) {
                   order.status,
                 )) ||
                 (seller &&
-                  ["pending_acceptance", "confirmed"].includes(
+                  ["pending_acceptance", "pending_payment", "confirmed"].includes(
                     order.status,
                   ))) && (
                 <button
@@ -527,6 +586,49 @@ function OrderDetail({ id }: { id: string }) {
             ["assigned", "picked_up", "in_transit"].includes(order.status) && (
               <DriverMap orderId={id} />
             )}
+          {order.delivery_method === "pickup" && !order.pickup_address && order.pickup_latitude == null && customer && (
+            <p className="notice section">📍 يظهر موقع استلام الطلب من الأسرة هنا بعد إتمام الدفع.</p>
+          )}
+          {order.delivery_method === "pickup" && (order.pickup_address || order.pickup_latitude != null) && (
+            <div className="panel section" style={{ marginTop: "1.5rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <h2 style={{ margin: "0 0 4px 0", fontSize: "1.2rem" }}>📍 موقع استلام الطلب من الأسرة</h2>
+                  <p style={{ margin: 0, color: "#444", fontWeight: 500 }}>
+                    {order.household_name} · {order.pickup_address || "الموقع على الخريطة"}
+                  </p>
+                </div>
+                <a
+                  className="button"
+                  target="_blank"
+                  rel="noreferrer"
+                  href={
+                    order.pickup_latitude && order.pickup_longitude
+                      ? `https://www.google.com/maps/dir/?api=1&destination=${order.pickup_latitude},${order.pickup_longitude}`
+                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.pickup_address || "")}`
+                  }
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  🗺️ فتح في خرائط Google (الاتجاهات)
+                </a>
+              </div>
+              {order.pickup_latitude != null && order.pickup_longitude != null && (
+                <PickupMap
+                  latitude={order.pickup_latitude}
+                  longitude={order.pickup_longitude}
+                  householdName={order.household_name}
+                  address={order.pickup_address}
+                />
+              )}
+              <p className="hint" style={{ marginTop: "8px" }}>
+                💡 الاستلام من المنزل مباشرة. يمكنك الضغط على «فتح في خرائط Google» لبدء التوجيه الملاحي المباشر.
+              </p>
+            </div>
+          )}
+          {/* Real-time Order Chat with Automated AI/System Updates */}
+          <div className="section" style={{ marginTop: "1.5rem" }}>
+            <OrderChat orderId={order.id} orderStatus={order.status} />
+          </div>
           {driver &&
             ["assigned", "picked_up", "in_transit"].includes(order.status) && (
               <form
@@ -645,7 +747,9 @@ function OrderDetail({ id }: { id: string }) {
               ? "استلام من الأسرة"
               : order.delivery_method === "free"
                 ? "توصيل تقدمه الأسرة"
-                : "توصيل بسائق — تجريبي"}
+                : provider === "tap"
+                  ? "توصيل بكابتن المنصة"
+                  : "توصيل بسائق — تجريبي"}
           </p>
           {order.address && <p>{order.address}</p>}
           {order.pickup_address && <p>موقع الاستلام: {order.pickup_address}</p>}
@@ -669,8 +773,9 @@ function OrderDetail({ id }: { id: string }) {
             </a>
           )}
           <p className="notice">
-            هذا طلب تجريبي ولا يثبت دفعًا أو توصيلًا فعليًا. رمز إثبات العملية
-            يظهر في إشعارات العميل بعد قبول السائق.
+            {provider === "tap"
+              ? "حالة الدفع هنا تؤكدها بوابة Tap. رمز إثبات العملية يظهر في إشعارات العميل بعد قبول السائق."
+              : "هذا طلب تجريبي ولا يثبت دفعًا أو توصيلًا فعليًا. رمز إثبات العملية يظهر في إشعارات العميل بعد قبول السائق."}
           </p>
           {user?.role === "admin" &&
             [
@@ -727,6 +832,13 @@ function OrderDetail({ id }: { id: string }) {
               onSubmit={async (e) => {
                 e.preventDefault();
                 const data = new FormData(e.currentTarget);
+                if (
+                  provider === "tap" &&
+                  !confirm(
+                    "سيُعاد " + data.get("amount") + " ر.س إلى بطاقة العميل عبر Tap. هل تريد المتابعة؟",
+                  )
+                )
+                  return;
                 await action(
                   "/payments/refund/" +
                     id +
@@ -738,7 +850,9 @@ function OrderDetail({ id }: { id: string }) {
               }}
             >
               <label>
-                مبلغ الاسترداد التجريبي (ريال)
+                {provider === "tap"
+                  ? "مبلغ الاسترداد (ريال) — يُعاد إلى بطاقة العميل عبر Tap"
+                  : "مبلغ الاسترداد التجريبي (ريال)"}
                 <input
                   name="amount"
                   type="number"
@@ -748,7 +862,7 @@ function OrderDetail({ id }: { id: string }) {
                 />
               </label>
               <button className="button" disabled={busy}>
-                تنفيذ استرداد تجريبي
+                {provider === "tap" ? "تنفيذ الاسترداد عبر Tap" : "تنفيذ استرداد تجريبي"}
               </button>
             </form>
           )}

@@ -11,6 +11,8 @@ data/
 backups/
 node_modules/
 .next/
+dist/
+build/
 test-results/
 playwright-report/
 *.log
@@ -19,8 +21,18 @@ frontend/tsconfig.tsbuildinfo
 releases/
 guidance.txt
 android/.gradle/
+android/.kotlin/
 android/.android/
 android/**/build/
 android/local.properties
 android/*.keystore
 android/*.jks
+# One-off maintenance scripts and local archives can hold credentials or private data.
+scratch_*.py
+*.tar
+# Rendered marketing media (videos, voice-over audio) stay out of the repository.
+marketing/**/out/
+marketing/**/vo/
+.claude/settings.local.json
+# Holds real families' and drivers' names, emails and home coordinates; keep it local.
+scripts/create_darb_accounts.py

@@ -1,4 +1,14 @@
+"use client";
 import Link from "next/link";
+import { usePaymentProvider } from "./payment-mode";
+
+// Wording that applies while real card payments run through Tap (the simulation keeps the texts below).
+const LIVE_PAYMENTS: Record<string, string> = {
+  "الطلب والدفع":
+    "الطلب لأسرة واحدة. يُحسب السعر والمخزون والموعد في الخادم، ويشمل الإجمالي رسوم التوصيل إن وُجدت ورسوم خدمة قدرها 1.50 ر.س. بعد موافقة الأسرة يُدفع الطلب عبر بوابة Tap (مدى، Apple Pay، البطاقات)، ولا يُعتمد الدفع إلا بعد تأكيده من Tap مباشرة.",
+  الاسترداد:
+    "تُنفَّذ الاستردادات عبر بوابة Tap إلى وسيلة الدفع نفسها، ويظهر المبلغ خلال المدة التي يحددها البنك المصدر. إذا وصلت دفعة لطلب أُلغي أو انتهت مهلته تُسجَّل لدى الإدارة وتُسترد كاملة. لا يسترد النظام أكثر من المبلغ المدفوع.",
+};
 const content: Record<string, { title: string; sections: [string, string][] }> =
   {
     terms: {
@@ -113,6 +123,7 @@ const content: Record<string, { title: string; sections: [string, string][] }> =
   };
 export function Policy({ slug }: { slug: string }) {
   const data = content[slug];
+  const live = usePaymentProvider() === "tap" ? LIVE_PAYMENTS : {};
   return (
     <article className="container page prose">
       <span className="overline">معلومات واضحة، وتجربة مطمئنة</span>
@@ -124,7 +135,7 @@ export function Policy({ slug }: { slug: string }) {
       {data?.sections.map(([title, text]) => (
         <section key={title}>
           <h2>{title}</h2>
-          <p>{text}</p>
+          <p>{live[title] || text}</p>
         </section>
       ))}
       <p>

@@ -77,15 +77,17 @@ def maintenance(db):
             if not db.scalar(select(Audit).where(Audit.action == "subscription.renewal.notice", Audit.resource_id == invoice.id)):
                 db.add(Audit(action="subscription.renewal.notice", resource_id=invoice.id))
                 db.add(Notification(user_id=h.owner_id, message="فاتورة تجديد اشتراك جاهزة للمراجعة، دون خصم تلقائي"))
-    for order in db.scalars(select(Order).where(Order.status == "pending_payment", Order.payment_expires_at < now()).with_for_update()):
+    for order in db.scalars(
+        select(Order).where(Order.status.in_(["pending_payment", "pending_acceptance"]), Order.payment_expires_at < now()).with_for_update()
+    ):
         changed = db.execute(
             update(Order)
-            .where(Order.id == order.id, Order.status == "pending_payment")
+            .where(Order.id == order.id, Order.status.in_(["pending_payment", "pending_acceptance"]))
             .values(status="cancelled", payment_status="expired")
         )
         if changed.rowcount:
             restore_stock(db, order)
-            notify(db, order, "انتهت مهلة الدفع وأعيد المخزون")
+            notify(db, order, "انتهت مهلة الطلب وأعيد المخزون")
     db.execute(
         update(Order)
         .where(Order.status == "ready", Order.delivery_method == "paid", Order.driver_id.is_(None), Order.offer_expires_at < now())
@@ -116,8 +118,46 @@ def maintenance(db):
     if time.monotonic() - _swept_at >= SWEEP_SECONDS:
         _swept_at = time.monotonic()
         compliance_sweep(db)
+        db.commit()
+        tap_sweep(db)
     db.execute(update(EmailMessage).where(EmailMessage.expires_at < now()).values(body="[انتهت صلاحية الرسالة]"))
     db.commit()
+
+
+def tap_sweep(db, batch=20):
+    """Re-reads Tap charges whose redirect and webhook never arrived, so captured money is always applied or flagged."""
+    from fastapi import HTTPException
+    from .models_ext import TapCharge
+    from .payments import apply_tap_charge
+    from .providers import TapPaymentProvider
+
+    if settings.payment_provider != "tap" or not settings.tap_secret_key:
+        return
+    rows = list(
+        db.scalars(
+            select(TapCharge)
+            .where(
+                TapCharge.status == "initiated",
+                TapCharge.created_at < now() - timedelta(minutes=10),
+                TapCharge.created_at > now() - timedelta(days=3),
+            )
+            .order_by(TapCharge.updated_at)
+            .limit(batch)
+        )
+    )
+    provider = TapPaymentProvider()
+    for row in rows:
+        charge_id = row.id
+        try:
+            _, _, outcome = apply_tap_charge(db, provider.get_charge(charge_id))
+            if outcome == "pending":
+                pending = db.get(TapCharge, charge_id)
+                if pending:
+                    pending.updated_at = now()
+                    db.commit()
+        except HTTPException:
+            db.rollback()
+            log.warning("Tap sweep could not check %s", charge_id)
 
 
 def process_outbox(db):

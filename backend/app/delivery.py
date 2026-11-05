@@ -67,7 +67,7 @@ def location(data: LocationInput, user=Depends(roles("driver")), db=Depends(get_
 @router.get("/summary")
 def summary(user=Depends(roles("driver")), db=Depends(get_db)):
     trips, fees = db.execute(
-        select(func.count(Order.id), func.coalesce(func.sum(Order.delivery_fee), 0)).where(
+        select(func.count(Order.id), func.coalesce(func.sum(Order.delivery_fee - Order.delivery_margin), 0)).where(
             Order.driver_id == user.id, Order.status == "delivered"
         )
     ).one()
@@ -114,7 +114,7 @@ def offers(user=Depends(roles("driver")), db=Depends(get_db)):
                 "id": o.id,
                 "city": h.city,
                 "scheduled_at": o.scheduled_at,
-                "fee": o.delivery_fee,
+                "fee": o.delivery_fee - o.delivery_margin,
                 "expires_at": o.offer_expires_at,
                 "distance_km": distance,
                 "source": "test",
@@ -189,7 +189,7 @@ def trip(order_id: str, user=Depends(roles("driver")), db=Depends(get_db)):
     return {
         "id": order.id,
         "status": order.status,
-        "fee": order.delivery_fee,
+        "fee": order.delivery_fee - order.delivery_margin,
         "scheduled_at": order.scheduled_at,
         "household_name": h.name,
         "pickup_address": h.pickup_address,

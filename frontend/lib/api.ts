@@ -13,6 +13,7 @@ export interface Product {
   status: string;
   featured: boolean;
   options?: { id: string; name: string; price_delta: number }[];
+  pickup_enabled?: boolean;
   household?: Household;
   reviews?: { rating: number; comment: string }[];
 }
@@ -30,6 +31,7 @@ export interface Household {
   pickup_address?: string;
   pickup_latitude?: number | null;
   pickup_longitude?: number | null;
+  pickup_enabled?: boolean;
   subscription_status?: string;
   telegram_linked?: boolean;
   slot_capacity?: number;
@@ -65,6 +67,11 @@ export interface Order {
   pickup_address?: string;
   pickup_latitude?: number | null;
   pickup_longitude?: number | null;
+  pickup_enabled?: boolean;
+  service_fee?: number;
+  merchant_fee?: number;
+  merchant_payout?: number;
+  driver_fee?: number;
   driver_id?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -162,19 +169,19 @@ export const date = (value: string) =>
     ),
   );
 export const status: Record<string, string> = {
-  pending_payment: "بانتظار الدفع",
   pending_acceptance: "بانتظار موافقة الأسرة",
+  pending_payment: "بانتظار الدفع",
   confirmed: "مؤكد",
-  preparing: "قيد التجهيز",
+  preparing: "جاري التجهيز",
   ready: "جاهز للاستلام",
   assigned: "تم إسناد السائق",
   picked_up: "استلم السائق الطلب",
   in_transit: "في الطريق",
   delivered: "تم التسليم",
-  completed: "مكتمل",
+  completed: "تم الاستلام بنجاح",
   cancelled: "ملغي",
   unpaid: "غير مدفوع",
-  paid: "مدفوع تجريبيًا",
+  paid: "مدفوع ✓",
   failed: "فشل الدفع",
   refund_pending: "بانتظار الاسترداد",
   refunded: "مسترد",

@@ -38,6 +38,7 @@ def product_json(product, store=None):
     if store:
         result["household_name"] = store.name
         result["city"] = store.city
+        result["pickup_enabled"] = getattr(store, "pickup_enabled", True)
     return result
 
 
@@ -52,6 +53,7 @@ def store_json(store):
             "verified",
             "free_delivery",
             "delivery_enabled",
+            "pickup_enabled",
             "on_vacation",
             "opening_hour",
             "closing_hour",

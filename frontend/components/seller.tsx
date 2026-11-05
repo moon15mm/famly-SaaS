@@ -39,6 +39,22 @@ function SellerContent() {
     [compliance, setCompliance] = useState<Compliance | null>(null),
     [error, setError] = useState("");
   const { toast } = useStore();
+  useEffect(() => {
+    // Tap returns families to /seller?tab=reports after paying a subscription.
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (
+      requested &&
+      [
+        "products",
+        "orders",
+        "settings",
+        "telegram",
+        "reports",
+        "documents",
+      ].includes(requested)
+    )
+      setTab(requested);
+  }, []);
   async function pause(p: Product) {
     try {
       await api("/seller/products/" + p.id, {
@@ -254,7 +270,10 @@ function SellerContent() {
             <StoreSettings store={store} done={load} />
           )}{" "}
           {tab === "telegram" && (
-            <TelegramPanel linked={store?.telegram_linked || false} />
+            <TelegramPanel
+              linked={store?.telegram_linked || false}
+              onUpdate={load}
+            />
           )}{" "}
           {tab === "reports" && (
             <>
@@ -643,6 +662,7 @@ function StoreSettings({
           slot_capacity: Number(d.get("slot_capacity")),
           free_delivery: d.has("free_delivery"),
           delivery_enabled: d.has("delivery_enabled"),
+          pickup_enabled: d.has("pickup_enabled"),
           on_vacation: d.has("on_vacation"),
           pickup_latitude: pickup.latitude,
           pickup_longitude: pickup.longitude,
@@ -733,6 +753,14 @@ function StoreSettings({
       <label className="check-label">
         <input
           type="checkbox"
+          name="pickup_enabled"
+          defaultChecked={store.pickup_enabled ?? true}
+        />{" "}
+        أسمح للعملاء باستلام الطلب من المنزل (الاستلام الذاتي)
+      </label>
+      <label className="check-label">
+        <input
+          type="checkbox"
           name="free_delivery"
           defaultChecked={store.free_delivery}
         />{" "}
@@ -760,53 +788,162 @@ function StoreSettings({
     </form>
   );
 }
-function TelegramPanel({ linked }: { linked: boolean }) {
-  const [command, setCommand] = useState(""),
-    [configured, setConfigured] = useState(false);
+function TelegramPanel({
+  linked,
+  onUpdate,
+}: {
+  linked: boolean;
+  onUpdate?: () => void;
+}) {
+  const [command, setCommand] = useState("");
+  const [botUrl, setBotUrl] = useState<string | null>(null);
+  const [configured, setConfigured] = useState(false);
+  const [busy, setBusy] = useState(false);
   const { toast } = useStore();
+
+  const handleUnlink = async () => {
+    if (!confirm("هل أنت متأكد من إلغاء ربط حساب Telegram؟")) return;
+    setBusy(true);
+    try {
+      await post("/telegram/unlink", {});
+      toast("تم إلغاء ربط الحساب");
+      setCommand("");
+      setBotUrl(null);
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      toast((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleGenerateCode = async () => {
+    setBusy(true);
+    try {
+      const r = await post<{
+        command: string;
+        configured: boolean;
+        bot_url?: string | null;
+      }>("/telegram/link");
+      setCommand(r.command);
+      setConfigured(r.configured);
+      setBotUrl(r.bot_url || null);
+      toast("تم إنشاء رمز الربط بنجاح");
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="panel form-stack">
-      <h2>منتجاتك برسالة</h2>
+      <h2>منتجاتك وتنبيهاتك عبر Telegram</h2>
       <p>
-        أرسل صورة منتجك وتعليقًا مثل: «كيكة شوكولاتة، السعر 85، الكمية 5،
-        التجهيز 24 ساعة» لتحويلها إلى مسودة غير منشورة.
+        اربط حساب Telegram لتلقي تنبيهات الطلبات الجديدة أولاً بأول، أو إضافة
+        منتجات جديدة بإرسال صورتها وبياناتها.
       </p>
-      <p className="badge">
-        {linked ? "حساب Telegram مرتبط" : "الحساب غير مرتبط"}
-      </p>
-      <button
-        className="button"
-        onClick={async () => {
-          try {
-            const r = await post<{ command: string; configured: boolean }>(
-              "/telegram/link",
-            );
-            setCommand(r.command);
-            setConfigured(r.configured);
-          } catch (e) {
-            toast((e as Error).message);
-          }
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
         }}
       >
-        إنشاء رمز ربط مؤقت
-      </button>
-      {command && (
-        <>
-          <p className="notice">
-            {configured
-              ? "أرسل هذا الأمر إلى بوت المنصة خلال 10 دقائق."
-              : "البوت غير مهيأ. يلزم ضبط رمز البوت وWebhook في الخادم أولًا."}
-          </p>
-          <code dir="ltr">{command}</code>
-        </>
-      )}
-      <p className="hint">
-        استخراج نصي حتمي حاليًا؛ لم يُفعّل اتصال نموذج متعدد الوسائط. تراجع
-        الأسرة كل مسودة وتعتمد النشر صراحة.
+        <p
+          className="badge"
+          style={{
+            margin: 0,
+            background: linked ? "#e6f4ea" : "#fef3c7",
+            color: linked ? "#137333" : "#92400e",
+          }}
+        >
+          {linked ? "حساب Telegram مرتبط بنجاح ✅" : "الحساب غير مرتبط حاليًا"}
+        </p>
+        {linked && (
+          <button
+            type="button"
+            className="button secondary"
+            disabled={busy}
+            onClick={handleUnlink}
+            style={{ padding: "4px 10px", fontSize: 13 }}
+          >
+            إلغاء الربط
+          </button>
+        )}
+      </div>
+
+      <hr style={{ margin: "16px 0", borderColor: "#f0eae1" }} />
+
+      <div>
+        <h3 style={{ margin: "0 0 8px 0", fontSize: 15, color: "#512630" }}>
+          🤖 الربط التلقائي عبر بوت Telegram
+        </h3>
+        <button className="button" disabled={busy} onClick={handleGenerateCode}>
+          إنشاء رمز ربط للبوت
+        </button>
+
+        {command && (
+          <div style={{ marginTop: 12 }}>
+            {configured ? (
+              <>
+                <p className="notice" style={{ margin: "0 0 8px 0" }}>
+                  اضغط الزر أدناه لفتح البوت في تطبيق Telegram مباشرة، أو انسخ
+                  الأمر وأرسله إلى البوت:
+                </p>
+                {botUrl && (
+                  <a
+                    className="button"
+                    href={botUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      textDecoration: "none",
+                      display: "inline-block",
+                      marginBottom: 8,
+                    }}
+                  >
+                    🚀 فتح البوت في Telegram مباشرة
+                  </a>
+                )}
+                <div>
+                  <code
+                    dir="ltr"
+                    style={{
+                      padding: "6px 12px",
+                      background: "#f3f4f6",
+                      borderRadius: 6,
+                      display: "inline-block",
+                    }}
+                  >
+                    {command}
+                  </code>
+                </div>
+              </>
+            ) : (
+              <p className="notice" style={{ margin: 0 }}>
+                لم يُضبط بوت Telegram على الخادم بعد؛ الربط والتنبيهات عبر
+                Telegram غير متاحة حاليًا، وتصلك التنبيهات داخل المنصة.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <p className="hint" style={{ marginTop: 16 }}>
+        💡 بعد الربط يصلك تنبيه في Telegram عند كل طلب جديد، وعند دفع العميل،
+        وعند إلغائه الطلب، ويمكنك إرسال منتجات جديدة كمسودات.
       </p>
     </div>
   );
 }
+const LEDGER_KINDS: Record<string, string> = {
+  product_sales: "مبيعات المنتجات",
+  merchant_commission: "عمولة المنصة",
+  refund: "استرداد للعميل",
+};
 function SellerReports() {
   const [rows, setRows] = useState<
       { order_id: string; kind: string; amount: number; note: string }[]
@@ -832,8 +969,9 @@ function SellerReports() {
     <>
       <h2>سجل المبيعات والاشتراكات</h2>
       <p className="notice">
-        المبالغ هنا تجريبية. لا تمثل أرباحًا صافية أو مستحقات مسددة. لم يُعتمد
-        مزود دفع أو نموذج توزيع أموال.
+        المبالغ هنا من الطلبات المدفوعة فعليًا: قيمة منتجاتك، وعمولة المنصة
+        عليها، والمبالغ المستردة للعملاء (كامل ما استرده العميل). هذه الصفحة
+        للاطلاع فقط ولا تُنفَّذ منها تحويلات.
       </p>
       {error && <p role="alert">{error}</p>}
       <div className="stats-grid">
@@ -860,8 +998,15 @@ function SellerReports() {
           </strong>
         </div>
         <div className="stat">
-          <small>التسويات الفعلية</small>
-          <strong>غير مفعلة</strong>
+          <small>عمولة المنصة</small>
+          <strong>
+            {money(
+              -rows
+                .filter((r) => r.kind === "merchant_commission")
+                .reduce((s, r) => s + r.amount, 0),
+            )}{" "}
+            ر.س
+          </strong>
         </div>
       </div>
       <div className="table-wrap">
@@ -878,7 +1023,7 @@ function SellerReports() {
             {rows.map((r, i) => (
               <tr key={i}>
                 <td>{r.order_id.slice(0, 8)}</td>
-                <td>{r.kind}</td>
+                <td>{LEDGER_KINDS[r.kind] || r.kind}</td>
                 <td>{money(r.amount)} ر.س</td>
                 <td>{r.note}</td>
               </tr>
@@ -898,8 +1043,8 @@ function SellerReports() {
           ))}
         </div>
         <p className="hint">
-          التجربة الأولية 14 يومًا. الاشتراكات المدفوعة والتجديد والفوترة
-          الفعلية تنتظر ربط مزود الدفع.
+          التجربة الأولية 14 يومًا، ثم تُدفع الباقة من صفحة الاشتراك. التجديد
+          يصدر فاتورة للمراجعة ولا يخصم تلقائيًا.
         </p>
       </section>
     </>

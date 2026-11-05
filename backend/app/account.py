@@ -98,5 +98,12 @@ def ledger(user=Depends(roles("seller")), db=Depends(get_db)):
     from .models import Ledger, Order
 
     h = household(db, user)
-    records = db.scalars(select(Ledger).join(Order).where(Order.household_id == h.id).order_by(Ledger.created_at.desc()).limit(200))
+    # A family sees its own sales, the platform commission on them and refunds; delivery and service fees are not theirs.
+    records = db.scalars(
+        select(Ledger)
+        .join(Order)
+        .where(Order.household_id == h.id, Ledger.kind.in_(["product_sales", "merchant_commission", "refund"]))
+        .order_by(Ledger.created_at.desc())
+        .limit(200)
+    )
     return [{"order_id": r.order_id, "kind": r.kind, "amount": r.amount, "note": r.note} for r in records]

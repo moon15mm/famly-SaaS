@@ -4,6 +4,7 @@ import { api, post, money, date } from "@/lib/api";
 import { useStore } from "./provider";
 import { Gate, OrderList } from "./account";
 import { AdminOperations } from "./admin-tools";
+import { TapChargesPanel } from "./tap-charges";
 type StoreRow = { id: string; name: string; city: string; verified: boolean };
 type UserRow = {
   id: string;
@@ -91,7 +92,7 @@ function AdminContent() {
         {[
           ["households", "الأسر المسجلة"],
           ["orders", "الطلبات"],
-          ["gross_sales", "قيمة الطلبات المدفوعة التجريبية"],
+          ["gross_sales", "قيمة الطلبات المدفوعة"],
         ].map(([key, label]) => (
           <div className="stat" key={key}>
             <small>{label}</small>
@@ -108,6 +109,7 @@ function AdminContent() {
           ["households", "اعتماد الأسر"],
           ["users", "الحسابات والسائقون"],
           ["orders", "الطلبات والاسترداد"],
+          ["payments", "معاملات Tap"],
           ["plans", "الباقات"],
           ["delivery", "تسعير التوصيل"],
           ["tickets", "الدعم"],
@@ -131,6 +133,7 @@ function AdminContent() {
         ))}
       </div>
       <AdminOperations tab={tab} />
+      {tab === "payments" && <TapChargesPanel />}
       {tab === "households" && (
         <div className="table-wrap">
           <table>

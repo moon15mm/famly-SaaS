@@ -49,6 +49,7 @@ class Household(Base):
     verified = Column(Boolean, nullable=False, default=False)
     free_delivery = Column(Boolean, nullable=False, default=False)
     delivery_enabled = Column(Boolean, nullable=False, default=True)
+    pickup_enabled = Column(Boolean, nullable=False, default=True)
     opening_hour = Column(Integer, nullable=False, default=9)
     closing_hour = Column(Integer, nullable=False, default=21)
     on_vacation = Column(Boolean, nullable=False, default=False)
@@ -100,6 +101,10 @@ class Order(Base):
     subtotal = Column(Integer, nullable=False)
     delivery_fee = Column(Integer, nullable=False, default=0)
     total = Column(Integer, nullable=False)
+    # Fee split fixed at checkout so later plan or rule changes never rewrite past orders.
+    service_fee = Column(Integer, nullable=False, default=0, server_default="0")
+    delivery_margin = Column(Integer, nullable=False, default=0, server_default="0")
+    merchant_fee = Column(Integer, nullable=False, default=0, server_default="0")
     refunded = Column(Integer, nullable=False, default=0)
     driver_id = Column(ForeignKey("users.id"), index=True)
     slot_id = Column(ForeignKey("schedule_slots.id", name="fk_orders_slot_id_schedule_slots"))
@@ -186,6 +191,10 @@ class Review(Base):
     household_id = Column(ForeignKey("households.id"), nullable=False, index=True)
     rating = Column(Integer, nullable=False)
     comment = Column(String(1000), nullable=False)
+    driver_id = Column(ForeignKey("users.id", name="fk_reviews_driver_id_users"))
+    driver_rating = Column(Integer)
+    driver_comment = Column(String(1000), nullable=False, default="", server_default="")
+    photo_url = Column(String(128))
 
 
 class SupportTicket(Base):

@@ -505,9 +505,19 @@ function OpsRoomContent() {
             <div style={{ padding: 20 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <button
-                  onClick={() => {
-                    const id = prompt("أدخل رقم الطلب المتعثر لسحبه وإعادة إسناده لكابتن آخر بالدرب:");
-                    if (id) toast(`تم سحب الطلب #${id} وإعادة توجيهه لأقرب كابتن متاح.`);
+                  onClick={async () => {
+                    const id = prompt("رقم الطلب الكامل (من رابط صفحة الطلب) لسحبه من الكابتن الحالي:")?.trim();
+                    if (!id) return;
+                    const note = prompt("سبب السحب (10 أحرف على الأقل، يُحفظ في سجل الدعم):")?.trim() || "";
+                    const returned = confirm(
+                      "اختر «موافق» فقط إن تحققت أن الكابتن أعاد الطلب للأسرة بعد استلامه. إن لم يستلمه بعد فاختر «إلغاء».",
+                    );
+                    try {
+                      await post(`/admin/delivery/${encodeURIComponent(id)}/reassign`, { note, returned_to_seller: returned });
+                      toast("سُحب الطلب وأُعيد عرضه على الكباتن المتاحين");
+                    } catch (err) {
+                      toast((err as Error).message);
+                    }
                   }}
                   style={{
                     background: "#fff",
@@ -525,9 +535,20 @@ function OpsRoomContent() {
                 </button>
 
                 <button
-                  onClick={() => {
-                    const id = prompt("أدخل رقم الطلب لاسترداد أموال العميل فوراً عبر Tap Payments:");
-                    if (id) toast(`تم إرسال أمر استرداد فوري (Refund) للطلب #${id} إلى Tap.`);
+                  onClick={async () => {
+                    const id = prompt("رقم الطلب الكامل (من رابط صفحة الطلب) لاسترداد مبلغه للعميل:")?.trim();
+                    if (!id) return;
+                    const amount = Number(prompt("المبلغ المراد استرداده بالريال:")?.trim());
+                    if (!amount || amount <= 0) return;
+                    if (!confirm(`سيُعاد ${amount.toFixed(2)} ر.س إلى بطاقة العميل عبر Tap. متابعة؟`)) return;
+                    try {
+                      await post(
+                        `/payments/refund/${encodeURIComponent(id)}?amount=${Math.round(amount * 100)}&event_id=${crypto.randomUUID()}`,
+                      );
+                      toast("نُفذ الاسترداد عبر Tap، ووصل للعميل إشعار بذلك");
+                    } catch (err) {
+                      toast((err as Error).message);
+                    }
                   }}
                   style={{
                     background: "#fff",
@@ -544,24 +565,6 @@ function OpsRoomContent() {
                   💳 استرداد مالي فوري للعميل (Refund API)
                 </button>
 
-                <button
-                  onClick={() => {
-                    alert("تم إيقاف استقبال الطلبات الجديدة مؤقتاً في الحي المحدد لحين تصفية ضغط الطلبات.");
-                  }}
-                  style={{
-                    background: "#fcfaf7",
-                    border: "1px solid #e9e3dc",
-                    color: "#512630",
-                    padding: "12px 16px",
-                    borderRadius: 10,
-                    fontSize: 13,
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    textAlign: "right",
-                  }}
-                >
-                  🛑 تعليق استقبال الطلبات في حي أو قرية
-                </button>
               </div>
 
               {/* Quick WhatsApp Templates */}
@@ -649,7 +652,7 @@ function OpsRoomContent() {
                     onClick={() =>
                       openWhatsApp(
                         "رقم جوال العميل:",
-                        "نعتذر منك عميلنا العزيز على هذا التأخير غير المقصود، تم استرداد كامل قيمة طلبك لحسابك البنكي ونقدم لك كوبون خصم لطلبك القادم."
+                        "نعتذر منك عميلنا العزيز على هذا التأخير غير المقصود. بدأنا استرداد قيمة طلبك إلى بطاقتك، ويظهر المبلغ عادةً خلال أيام العمل حسب البنك."
                       )
                     }
                     style={{
@@ -666,7 +669,7 @@ function OpsRoomContent() {
                       alignItems: "center",
                     }}
                   >
-                    <span>اعتذار واسترداد فوري للعميل</span>
+                    <span>اعتذار للعميل بعد تنفيذ الاسترداد</span>
                     <span style={{ color: "#25d366" }}>💬</span>
                   </div>
                 </div>

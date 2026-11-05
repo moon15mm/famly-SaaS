@@ -67,7 +67,7 @@ def test_server_price_stock_and_idempotency(setup, checkout_data):
     r = c["customer"].post("/api/orders", json=checkout_data)
     assert r.status_code == 201
     order = r.json()
-    assert order["total"] == 17000
+    assert order["total"] == 17150
     again = c["customer"].post("/api/orders", json=checkout_data)
     assert again.json()["id"] == order["id"]
     with factory() as db:
@@ -105,6 +105,7 @@ def test_schedule_and_address_validation(setup, checkout_data):
 
 def paid_order(c, data):
     order = c["customer"].post("/api/orders", json=data).json()
+    assert c["seller"].post("/api/orders/" + order["id"] + "/transition?state=pending_payment").status_code == 200
     assert c["customer"].post("/api/payments/test/" + order["id"]).status_code == 200
     return order["id"]
 
@@ -118,7 +119,7 @@ def test_payment_duplicate_and_order_isolation(setup, checkout_data):
     assert c["seller"].post("/api/orders/" + oid + "/transition?state=delivered").status_code == 409
     with factory() as db:
         assert len(list(db.scalars(select(PaymentEvent)))) == 1
-        assert len(list(db.scalars(select(Ledger)))) == 2
+        assert len(list(db.scalars(select(Ledger)))) == 3
 
 
 def test_full_pickup_flow_and_review(setup, checkout_data):
@@ -134,6 +135,7 @@ def test_full_pickup_flow_and_review(setup, checkout_data):
 def test_failed_payment_restores_stock_once(setup, checkout_data):
     factory, c = setup
     oid = c["customer"].post("/api/orders", json=checkout_data).json()["id"]
+    assert c["seller"].post("/api/orders/" + oid + "/transition?state=pending_payment").status_code == 200
     assert c["customer"].post("/api/payments/test/" + oid + "?outcome=failed").status_code == 200
     assert c["customer"].post("/api/payments/test/" + oid + "?outcome=failed").json()["duplicate"] is True
     assert c["customer"].post("/api/payments/test/" + oid).status_code == 409
@@ -149,7 +151,7 @@ def test_cancellation_refund_cap_and_replay(setup, checkout_data):
     assert c["admin"].post("/api/payments/refund/" + oid + "?amount=10000&event_id=refund-event-1").status_code == 200
     assert c["admin"].post("/api/payments/refund/" + oid + "?amount=10000&event_id=refund-event-1").json()["duplicate"] is True
     assert c["admin"].post("/api/payments/refund/" + oid + "?amount=8000&event_id=refund-event-2").status_code == 422
-    assert c["admin"].post("/api/payments/refund/" + oid + "?amount=7000&event_id=refund-event-3").status_code == 200
+    assert c["admin"].post("/api/payments/refund/" + oid + "?amount=7150&event_id=refund-event-3").status_code == 200
     with factory() as db:
         assert db.get(Order, oid).payment_status == "refunded"
         assert db.get(Product, "product0").stock == 5
@@ -158,6 +160,7 @@ def test_cancellation_refund_cap_and_replay(setup, checkout_data):
 def test_webhook_signature_and_amount(setup, checkout_data):
     _, c = setup
     order = c["customer"].post("/api/orders", json=checkout_data).json()
+    assert c["seller"].post("/api/orders/" + order["id"] + "/transition?state=pending_payment").status_code == 200
     data = {"event_id": "external-event-1", "order_id": order["id"], "amount": 1, "outcome": "paid", "currency": "SAR"}
     body = json.dumps(data).encode()
     assert c["customer"].post("/api/payments/webhook/test", content=body, headers={"x-signature": "wrong"}).status_code == 401
@@ -232,7 +235,7 @@ def test_favorites_and_support(setup, checkout_data):
 def test_telegram_unauthenticated_and_explicit_fields(setup):
     _, c = setup
     assert c["customer"].post("/api/telegram/link").status_code == 403
-    assert c["seller"].post("/api/telegram/link").json()["expires_in"] == 600
+    assert c["seller"].post("/api/telegram/link").json()["expires_in"] == 1800
     assert c["seller"].post("/api/telegram/webhook", json={"update_id": 1}).status_code == 503
     from app.telegram import ExplicitTextProvider
 

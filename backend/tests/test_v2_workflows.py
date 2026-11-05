@@ -214,7 +214,7 @@ def test_options_are_server_priced_and_share_stock(setup, checkout_data):
     ]
     r = c["customer"].post("/api/orders", json=checkout_data)
     assert r.status_code == 201
-    assert r.json()["total"] == 28500
+    assert r.json()["total"] == 28650
     assert {i["option_label"] for i in r.json()["items"]} == {"كبير", "صغير"}
     with factory() as db:
         assert db.get(Product, "product0").stock == 2

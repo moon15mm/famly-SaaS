@@ -53,6 +53,8 @@ export function AdminOperations({ tab }: { tab: string }) {
     [trips, setTrips] = useState<ActiveTrip[]>([]),
     [plans, setPlans] = useState<(PlanDetails & { active: boolean })[]>([]),
     [editing, setEditing] = useState<Category | null>(null),
+    [productSearch, setProductSearch] = useState(""),
+    [productStatusFilter, setProductStatusFilter] = useState<"all" | "published" | "paused" | "draft">("all"),
     [error, setError] = useState("");
   function load() {
     setError("");
@@ -125,80 +127,249 @@ export function AdminOperations({ tab }: { tab: string }) {
           {error}
         </p>
       )}
-      {tab === "products" && (
-        <>
-          <h2>إشراف المنتجات</h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>المنتج</th>
-                  <th>الأسرة</th>
-                  <th>السعر</th>
-                  <th>الحالة</th>
-                  <th>الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.name}</td>
-                    <td>{p.household_name}</td>
-                    <td>{money(p.price)} ر.س</td>
-                    <td>
-                      {p.status === "published"
-                        ? "منشور"
-                        : p.status === "draft"
-                          ? "مسودة"
-                          : p.status === "archived"
-                            ? "حذفته الأسرة"
-                            : "متوقف"}
-                    </td>
-                    <td>
-                      {p.status !== "archived" && (
-                        <>
-                          <button
-                            className="text-button"
-                            onClick={() =>
-                              act("/admin/products/" + p.id + "/status", {
-                                status:
-                                  p.status === "published"
-                                    ? "paused"
-                                    : "published",
-                                featured: p.featured,
-                              })
-                            }
-                          >
-                            {p.status === "published"
-                              ? "إيقاف"
-                              : "نشر بعد التحقق"}
-                          </button>
-                          <button
-                            className="text-button"
-                            onClick={() =>
-                              act("/admin/products/" + p.id + "/status", {
-                                status: p.status,
-                                featured: !p.featured,
-                              })
-                            }
-                          >
-                            {p.featured ? "إلغاء التمييز" : "تمييز في السوق"}
-                          </button>
-                        </>
-                      )}
-                      {p.status === "published" && (
-                        <Link className="text-link" href={"/product/" + p.id}>
-                          المعاينة
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
+      {tab === "products" && (() => {
+        const filteredProducts = products.filter((p) => {
+          const s = productSearch.trim().toLowerCase();
+          const matchesSearch =
+            !s ||
+            p.name.toLowerCase().includes(s) ||
+            (p.household_name && p.household_name.toLowerCase().includes(s));
+          const matchesStatus =
+            productStatusFilter === "all" ||
+            (productStatusFilter === "published" && p.status === "published") ||
+            (productStatusFilter === "paused" && p.status === "paused") ||
+            (productStatusFilter === "draft" && (p.status === "draft" || p.status === "archived"));
+          return matchesSearch && matchesStatus;
+        });
+        const publishedCount = products.filter((p) => p.status === "published").length;
+        const pausedCount = products.filter((p) => p.status === "paused").length;
+        const draftCount = products.filter((p) => p.status === "draft" || p.status === "archived").length;
+
+        return (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "bold" }}>إشراف وإدارة بيع المنتجات 🛍️</h2>
+                <p style={{ margin: "4px 0 0", color: "#666", fontSize: "13px" }}>
+                  التحكم الفوري في إتاحة أو إيقاف بيع أي منتج محدد للأسر في السوق
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "bold" }}>
+                  الإجمالي: {products.length}
+                </span>
+                <span style={{ background: "#dcfce7", color: "#15803d", padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "bold" }}>
+                  معروض للبيع: {publishedCount}
+                </span>
+                <span style={{ background: "#fee2e2", color: "#b91c1c", padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "bold" }}>
+                  موقوف عن البيع: {pausedCount}
+                </span>
+              </div>
+            </div>
+
+            {/* Search and Filters */}
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "16px", alignItems: "center" }}>
+              <input
+                type="text"
+                placeholder="🔍 بحث باسم المنتج أو الأسرة المنتجة..."
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                style={{
+                  flex: "1",
+                  minWidth: "260px",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "14px"
+                }}
+              />
+              <div style={{ display: "flex", gap: "6px" }}>
+                {(
+                  [
+                    ["all", `الكل (${products.length})`],
+                    ["published", `المعروضة للبيع (${publishedCount})`],
+                    ["paused", `الموقوفة 🛑 (${pausedCount})`],
+                    ["draft", `المسودات (${draftCount})`],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setProductStatusFilter(key)}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      border: productStatusFilter === key ? "2px solid #5a1926" : "1px solid #d1d5db",
+                      background: productStatusFilter === key ? "#5a1926" : "white",
+                      color: productStatusFilter === key ? "white" : "#374151",
+                      fontSize: "12px",
+                      fontWeight: productStatusFilter === key ? "bold" : "normal",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {label}
+                  </button>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+              </div>
+            </div>
+
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>المنتج</th>
+                    <th>الأسرة المنتجة</th>
+                    <th>السعر</th>
+                    <th>حالة البيع في السوق</th>
+                    <th>التحكم والإجراء الفوري</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: "center", padding: "24px", color: "#888" }}>
+                        لا توجد منتجات مطابقة لخيارات البحث أو التصفية
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProducts.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <strong>{p.name}</strong>
+                          {p.featured && (
+                            <span style={{ marginRight: "6px", background: "#fef3c7", color: "#b45309", padding: "2px 6px", borderRadius: "4px", fontSize: "11px", fontWeight: "bold" }}>
+                              ⭐ مميز
+                            </span>
+                          )}
+                        </td>
+                        <td>{p.household_name || "—"}</td>
+                        <td>{money(p.price)} ر.س</td>
+                        <td>
+                          {p.status === "published" ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: "bold" }}>
+                              ✓ متاح للبيع في السوق
+                            </span>
+                          ) : p.status === "paused" ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: "bold" }}>
+                              🛑 موقوف من الإدارة
+                            </span>
+                          ) : p.status === "draft" ? (
+                            <span style={{ background: "#f3f4f6", color: "#4b5563", padding: "4px 8px", borderRadius: "6px", fontSize: "12px" }}>
+                              مسودة
+                            </span>
+                          ) : (
+                            <span style={{ background: "#f3f4f6", color: "#9ca3af", padding: "4px 8px", borderRadius: "6px", fontSize: "12px" }}>
+                              حذفته الأسرة
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                            {p.status === "published" && (
+                              <button
+                                type="button"
+                                style={{
+                                  background: "#fee2e2",
+                                  color: "#b91c1c",
+                                  border: "1px solid #f87171",
+                                  padding: "6px 14px",
+                                  borderRadius: "6px",
+                                  fontWeight: "bold",
+                                  cursor: "pointer",
+                                  fontSize: "12px"
+                                }}
+                                onClick={() => {
+                                  if (confirm(`هل أنت متأكد من إيقاف بيع المنتج (${p.name}) فوراً من المنصة والتطبيق؟`)) {
+                                    act("/admin/products/" + p.id + "/status", {
+                                      status: "paused",
+                                      featured: p.featured,
+                                    });
+                                  }
+                                }}
+                              >
+                                🛑 إيقاف البيع فوراً
+                              </button>
+                            )}
+
+                            {p.status === "paused" && (
+                              <button
+                                type="button"
+                                style={{
+                                  background: "#dcfce7",
+                                  color: "#15803d",
+                                  border: "1px solid #86efac",
+                                  padding: "6px 14px",
+                                  borderRadius: "6px",
+                                  fontWeight: "bold",
+                                  cursor: "pointer",
+                                  fontSize: "12px"
+                                }}
+                                onClick={() => {
+                                  act("/admin/products/" + p.id + "/status", {
+                                    status: "published",
+                                    featured: p.featured,
+                                  });
+                                }}
+                              >
+                                ✓ إعادة تفعيل البيع
+                              </button>
+                            )}
+
+                            {p.status === "draft" && (
+                              <button
+                                type="button"
+                                style={{
+                                  background: "#fef3c7",
+                                  color: "#92400e",
+                                  border: "1px solid #fcd34d",
+                                  padding: "6px 12px",
+                                  borderRadius: "6px",
+                                  fontSize: "12px",
+                                  cursor: "pointer"
+                                }}
+                                onClick={() =>
+                                  act("/admin/products/" + p.id + "/status", {
+                                    status: "published",
+                                    featured: p.featured,
+                                  })
+                                }
+                              >
+                                نشر بالسوق
+                              </button>
+                            )}
+
+                            {p.status !== "archived" && (
+                              <button
+                                type="button"
+                                className="text-button"
+                                style={{ fontSize: "11px" }}
+                                onClick={() =>
+                                  act("/admin/products/" + p.id + "/status", {
+                                    status: p.status,
+                                    featured: !p.featured,
+                                  })
+                                }
+                              >
+                                {p.featured ? "إلغاء التمييز" : "تمييز"}
+                              </button>
+                            )}
+
+                            {p.status === "published" && (
+                              <Link className="text-link" href={"/product/" + p.id} target="_blank" style={{ fontSize: "11px" }}>
+                                👁️ معاينة
+                              </Link>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        );
+      })()}
       {tab === "categories" && (
         <div className="checkout-grid">
           <div className="order-list">

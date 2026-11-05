@@ -48,9 +48,10 @@ def seed():
         for key, name, icon in CATEGORIES:
             if not db.get(Category, key):
                 db.add(Category(id=key, name=name, icon=icon))
-        plan = Plan(name="بداية", monthly_price=4900, product_limit=30)
+        plan = Plan(name="بداية للأسر المنتجة", monthly_price=4900, product_limit=30)
         db.add(plan)
         db.add(Plan(name="حكاية أكبر", monthly_price=9900, product_limit=100))
+        db.add(Plan(name="النخبة للمطاعم الرسمية", monthly_price=19900, product_limit=500, trial_days=14))
         db.add(DeliveryRule(id=1))
         db.flush()
         stores = []

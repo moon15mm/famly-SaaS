@@ -92,12 +92,31 @@ async def create_draft(db, h, text, image_url, sender):
 
 @router.post("/link")
 def link(user=Depends(roles("seller")), db=Depends(get_db)):
-    limit("telegram-link:" + user.id, 5, 300)
+    limit("telegram-link:" + user.id, 20, 300)
     h = household(db, user)
     token = secrets.token_urlsafe(24)
-    db.add(TelegramLink(token_hash=digest(token), household_id=h.id, expires_at=now() + timedelta(minutes=10)))
+    db.add(TelegramLink(token_hash=digest(token), household_id=h.id, expires_at=now() + timedelta(minutes=30)))
     db.commit()
-    return {"command": "/start " + token, "expires_in": 600, "configured": bool(settings.telegram_bot_token)}
+    bot_username = getattr(settings, "telegram_bot_username", "") or ""
+    bot_url = f"https://t.me/{bot_username}?start={token}" if bot_username else None
+    return {
+        "command": "/start " + token,
+        "bot_username": bot_username,
+        "bot_url": bot_url,
+        "expires_in": 1800,
+        "configured": bool(settings.telegram_bot_token),
+        "linked": bool(h.telegram_user_id),
+        "telegram_user_id": h.telegram_user_id,
+    }
+
+
+@router.post("/unlink")
+def unlink(user=Depends(roles("seller")), db=Depends(get_db)):
+    """Unlink household Telegram account."""
+    h = household(db, user)
+    h.telegram_user_id = None
+    db.commit()
+    return {"ok": True, "linked": False}
 
 
 def queue(db, chat_id, message):

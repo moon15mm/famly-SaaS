@@ -17,8 +17,8 @@ android {
         applicationId 'sa.minbuyutna.app'
         minSdk 26
         targetSdk 35
-        versionCode 4
-        versionName '0.4.0'
+        versionCode 5
+        versionName '0.5.0'
         buildConfigField 'String', 'PLATFORM_URL', '"' + platformUrl + '"'
     }
     buildFeatures {
@@ -49,15 +49,27 @@ tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
 }
 
 dependencies {
-    // Native driver screens; the web screens keep using the platform WebView.
     implementation platform('androidx.compose:compose-bom:2024.10.01')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.foundation:foundation'
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.compose.material:material-icons-core'
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation 'io.coil-kt:coil-compose:2.7.0'
     implementation 'androidx.activity:activity-compose:1.9.3'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7'
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
     testImplementation 'junit:junit:4.13.2'
+}
+
+// coil's dependency tree still pins the empty kotlin-stdlib-jdk7/jdk8 shims at 1.8.21. Align them with a
+// version present in the local dependency cache so offline builds, including lint's test classpaths, resolve.
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name in ['kotlin-stdlib-jdk7', 'kotlin-stdlib-jdk8']) {
+            details.useVersion '1.9.20'
+            details.because 'empty shims since Kotlin 1.8; keeps offline builds resolvable'
+        }
+    }
 }

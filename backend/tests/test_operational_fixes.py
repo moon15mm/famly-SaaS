@@ -39,6 +39,7 @@ def test_admin_cancels_paid_delivery_stuck_without_driver(setup, checkout_data):
     }
     order = c["customer"].post("/api/orders", json=paid).json()
     oid = order["id"]
+    assert c["seller"].post("/api/orders/" + oid + "/transition?state=pending_payment").status_code == 200
     assert c["customer"].post("/api/payments/test/" + oid).status_code == 200
     for state in ["confirmed", "preparing", "ready"]:
         assert c["seller"].post("/api/orders/" + oid + "/transition?state=" + state).status_code == 200
@@ -141,6 +142,7 @@ def test_lapsed_subscription_hides_storefront_until_renewal(setup, checkout_data
         db.commit()
     assert_hidden()
     # Orders placed before the lapse stay serviceable.
+    assert c["seller"].post("/api/orders/" + existing["id"] + "/transition?state=pending_payment").status_code == 200
     assert c["customer"].post("/api/payments/test/" + existing["id"]).status_code == 200
     assert c["seller"].post("/api/orders/" + existing["id"] + "/transition?state=confirmed").status_code == 200
     plan = c["admin"].post("/api/admin/plans", json={"name": "باقة التجديد", "monthly_price": 4900, "product_limit": 30}).json()

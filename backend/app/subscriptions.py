@@ -102,8 +102,10 @@ def create_invoice(data: SubscribeInput, user=Depends(roles("seller")), db=Depen
     return invoice_json(invoice)
 
 
-def activate_invoice_paid(db, invoice, user):
+def activate_invoice_paid(db, invoice, user, provider=None):
     h = db.scalar(select(Household).where(Household.id == invoice.household_id).with_for_update())
+    if provider:
+        invoice.provider = provider
     current = db.get(Subscription, h.id)
     start = max(now(), current.ends_at) if current and current.ends_at else now()
     end = add_months(start, 12 if invoice.interval == "annual" else 1)
