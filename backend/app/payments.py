@@ -80,6 +80,11 @@ def process_event(db, data, allow_late=False):
         restore_stock(db, order)
     notify(db, order, "تم سداد قيمة الطلب بنجاح! بدأ المطبخ في تجهيز طلبك 🍳" if paid else "تعذر الدفع وألغي الطلب")
     try:
+        from .order_chat import trigger_order_chat_status_event
+        trigger_order_chat_status_event(db, order, order.status)
+    except Exception:
+        pass
+    try:
         db.commit()
     except IntegrityError:
         db.rollback()

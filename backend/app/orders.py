@@ -422,6 +422,11 @@ def transition(order_id: str, state: str, user=Depends(current_user), db=Depends
         notify(db, order, "الطلب جاهز للتسليم")
     else:
         notify(db, order, "تحديث حالة الطلب: " + state)
+    try:
+        from .order_chat import trigger_order_chat_status_event
+        trigger_order_chat_status_event(db, order, state)
+    except Exception:
+        pass
     audit(db, user, "order." + state, order.id)
     db.commit()
     db.refresh(order)

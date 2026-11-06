@@ -174,6 +174,11 @@ def accept(order_id: str, user=Depends(roles("driver")), db=Depends(get_db)):
     db.add(Notification(user_id=order.customer_id, message="رمز إثبات التسليم لطلب " + order.id[:8] + ": " + code))
     h = db.get(Household, order.household_id)
     db.add(Notification(user_id=h.owner_id, message="رمز إثبات الاستلام من الأسرة لطلب " + order.id[:8] + ": " + pickup_code))
+    try:
+        from .order_chat import trigger_order_chat_status_event
+        trigger_order_chat_status_event(db, order, "assigned")
+    except Exception:
+        pass
     audit(db, user, "delivery.accept", order.id)
     db.commit()
     return {"ok": True}
@@ -225,6 +230,11 @@ def trip_transition(order_id: str, state: str, code: str = "", user=Depends(role
         if not user.available:
             db.execute(delete(DriverPosition).where(DriverPosition.driver_id == user.id))
     notify(db, order, "تحديث التوصيل: " + state)
+    try:
+        from .order_chat import trigger_order_chat_status_event
+        trigger_order_chat_status_event(db, order, state)
+    except Exception:
+        pass
     audit(db, user, "delivery." + state, order.id)
     db.commit()
     return {"ok": True}
