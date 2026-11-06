@@ -25,12 +25,27 @@ android {
         buildConfig true
         compose true
     }
+    signingConfigs {
+        release {
+            def keystoreFile = file('../keystore/minbuyutna-release.jks')
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword providers.gradleProperty('RELEASE_STORE_PASSWORD').getOrElse('MinBuyutna@2026#Prod')
+                keyAlias providers.gradleProperty('RELEASE_KEY_ALIAS').getOrElse('minbuyutna')
+                keyPassword providers.gradleProperty('RELEASE_KEY_PASSWORD').getOrElse('MinBuyutna@2026#Prod')
+            }
+        }
+    }
     buildTypes {
         debug {
             applicationIdSuffix '.local'
             signingConfig signingConfigs.debug
         }
-        release { minifyEnabled false }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
